@@ -8,10 +8,10 @@ import android.content.res.Resources;
 import android.content.res.XmlResourceParser;
 import android.os.Bundle;
 
-import com.lody.virtual.helper.proto.AppSetting;
-import com.lody.virtual.server.pm.VAppManagerService;
+import com.lody.virtual.server.pm.PackageCacheManager;
+import com.lody.virtual.server.pm.PackageSetting;
 
-public class AppAccountParser implements IAccountParser {
+class AppAccountParser implements IAccountParser {
 
     @Override
     public XmlResourceParser getParser(Context context, ServiceInfo serviceInfo, String name) {
@@ -31,10 +31,10 @@ public class AppAccountParser implements IAccountParser {
 
     @Override
     public Resources getResources(Context context, ApplicationInfo appInfo) throws Exception {
-        AppSetting appSetting = VAppManagerService.get().findAppInfo(appInfo.packageName);
-        if (appSetting != null) {
+        PackageSetting ps = PackageCacheManager.getSetting(appInfo.packageName);
+        if (ps != null) {
             AssetManager assets = mirror.android.content.res.AssetManager.ctor.newInstance();
-            mirror.android.content.res.AssetManager.addAssetPath.call(assets, appSetting.apkPath);
+            mirror.android.content.res.AssetManager.addAssetPath.call(assets, ps.apkPath);
             Resources hostRes = context.getResources();
             return new Resources(assets, hostRes.getDisplayMetrics(), hostRes.getConfiguration());
         }

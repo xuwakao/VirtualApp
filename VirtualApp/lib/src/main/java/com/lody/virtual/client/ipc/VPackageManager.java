@@ -14,8 +14,7 @@ import android.os.IBinder;
 import android.os.RemoteException;
 
 import com.lody.virtual.client.env.VirtualRuntime;
-import com.lody.virtual.helper.proto.ReceiverInfo;
-import com.lody.virtual.service.IPackageManager;
+import com.lody.virtual.server.IPackageManager;
 
 import java.util.List;
 
@@ -32,18 +31,22 @@ public class VPackageManager {
 		return sMgr;
 	}
 
-	public synchronized IPackageManager getInterface() {
+	public IPackageManager getInterface() {
 		if (mRemote == null) {
 			synchronized (VPackageManager.class) {
 				if (mRemote == null) {
-					final IBinder pmBinder = ServiceManagerNative.getService(ServiceManagerNative.PACKAGE);
-					Object remote = IPackageManager.Stub.asInterface(pmBinder);
+					Object remote = getRemoteInterface();
 					mRemote = LocalProxyUtils.genProxy(IPackageManager.class, remote);
 				}
 			}
 		}
 		return mRemote;
 	}
+
+	private Object getRemoteInterface() {
+        final IBinder pmBinder = ServiceManagerNative.getService(ServiceManagerNative.PACKAGE);
+        return IPackageManager.Stub.asInterface(pmBinder);
+    }
 
 	public int checkPermission(String permName, String pkgName, int userId) {
 		try {
@@ -218,15 +221,6 @@ public class VPackageManager {
 		try {
 			// noinspection unchecked
 			return getInterface().queryContentProviders(processName, uid, flags).getList();
-		} catch (RemoteException e) {
-			return VirtualRuntime.crash(e);
-		}
-	}
-
-	public List<ReceiverInfo> queryReceivers(String processName, int uid, int flags) {
-		try {
-			// noinspection unchecked
-			return getInterface().queryReceivers(processName, uid, flags);
 		} catch (RemoteException e) {
 			return VirtualRuntime.crash(e);
 		}
