@@ -8,7 +8,7 @@ import android.os.RemoteException;
 
 import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.os.VUserHandle;
-import com.lody.virtual.service.IAccountManager;
+import com.lody.virtual.server.IAccountManager;
 
 /**
  * @author Lody
@@ -26,11 +26,15 @@ public class VAccountManager {
 
 	public IAccountManager getRemote() {
 		if (mRemote == null) {
-			IAccountManager remote = IAccountManager.Stub
-					.asInterface(ServiceManagerNative.getService(ServiceManagerNative.ACCOUNT));
+			Object remote = getStubInterface();
 			mRemote = LocalProxyUtils.genProxy(IAccountManager.class, remote);
 		}
 		return mRemote;
+	}
+
+	private Object getStubInterface() {
+		return IAccountManager.Stub
+				.asInterface(ServiceManagerNative.getService(ServiceManagerNative.ACCOUNT));
 	}
 
 	public AuthenticatorDescription[] getAuthenticatorTypes() {

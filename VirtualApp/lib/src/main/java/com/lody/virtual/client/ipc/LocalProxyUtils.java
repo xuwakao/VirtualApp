@@ -1,7 +1,5 @@
 package com.lody.virtual.client.ipc;
 
-import android.os.Binder;
-
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -19,17 +17,21 @@ public class LocalProxyUtils {
      * @return proxy object
      */
     public static <T> T genProxy(Class<T> interfaceClass, final Object base) {
+        //noinspection ConstantConditions
+        if (true) {
+            return (T) base;
+        }
         //noinspection unchecked
         return (T) Proxy.newProxyInstance(interfaceClass.getClassLoader(), new Class[]{ interfaceClass }, new InvocationHandler() {
             @Override
             public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-                long identity = Binder.clearCallingIdentity();
                 try {
                     return method.invoke(base, args);
-                } finally {
-                    Binder.restoreCallingIdentity(identity);
+                } catch (Throwable e) {
+                    throw e.getCause() == null ? e : e.getCause();
                 }
             }
         });
     }
+
 }
