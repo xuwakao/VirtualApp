@@ -15,6 +15,7 @@ import jonathanfinerty.once.Once;
 
 public class SplashActivity extends VActivity {
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         @SuppressWarnings("unused")
@@ -29,9 +30,9 @@ public class SplashActivity extends VActivity {
                 Once.markDone("collect_flurry");
             }
             long time = System.currentTimeMillis();
-            VirtualCore.get().waitForEngine();
+            doActionInThread();
             time = System.currentTimeMillis() - time;
-            long delta = 1000L - time;
+            long delta = 3000L - time;
             if (delta > 0) {
                 VUiKit.sleep(delta);
             }
@@ -41,4 +42,10 @@ public class SplashActivity extends VActivity {
         });
     }
 
+
+    private void doActionInThread() {
+        if (!VirtualCore.get().isEngineLaunched()) {
+            VirtualCore.get().waitForEngine();
+        }
+    }
 }

@@ -3,6 +3,7 @@ package io.virtualapp.home;
 import android.app.Activity;
 import android.graphics.Bitmap;
 
+import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.os.VUserInfo;
 import com.lody.virtual.os.VUserManager;
@@ -29,6 +30,8 @@ class HomePresenterImpl implements HomeContract.HomePresenter {
     private HomeContract.HomeView mView;
     private Activity mActivity;
     private AppRepository mRepo;
+    private AppData mTempAppData;
+
 
     HomePresenterImpl(HomeContract.HomeView view) {
         mView = view;
@@ -43,6 +46,10 @@ class HomePresenterImpl implements HomeContract.HomePresenter {
         if (!Once.beenDone(VCommends.TAG_SHOW_ADD_APP_GUIDE)) {
             mView.showGuide();
             Once.markDone(VCommends.TAG_SHOW_ADD_APP_GUIDE);
+        }
+        if (!Once.beenDone(VCommends.TAG_ASK_INSTALL_GMS) && GmsSupport.isOutsideGoogleFrameworkExist()) {
+            mView.askInstallGms();
+            Once.markDone(VCommends.TAG_ASK_INSTALL_GMS);
         }
     }
 

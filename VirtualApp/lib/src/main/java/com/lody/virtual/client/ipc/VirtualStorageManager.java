@@ -1,11 +1,11 @@
 package com.lody.virtual.client.ipc;
 
 
-import android.os.IBinder;
 import android.os.RemoteException;
 
 import com.lody.virtual.client.env.VirtualRuntime;
-import com.lody.virtual.server.IVirtualStorageService;
+import com.lody.virtual.helper.ipcbus.IPCSingleton;
+import com.lody.virtual.server.interfaces.IVirtualStorageService;
 
 /**
  * @author Lody
@@ -14,7 +14,7 @@ import com.lody.virtual.server.IVirtualStorageService;
 public class VirtualStorageManager {
 
     private static final VirtualStorageManager sInstance = new VirtualStorageManager();
-    private IVirtualStorageService mRemote;
+    private IPCSingleton<IVirtualStorageService> singleton = new IPCSingleton<>(IVirtualStorageService.class);
 
 
     public static VirtualStorageManager get() {
@@ -23,20 +23,7 @@ public class VirtualStorageManager {
 
 
     public IVirtualStorageService getRemote() {
-        if (mRemote == null) {
-            synchronized (this) {
-                if (mRemote == null) {
-                    Object remote = getRemoteInterface();
-                    mRemote = LocalProxyUtils.genProxy(IVirtualStorageService.class, remote);
-                }
-            }
-        }
-        return mRemote;
-    }
-
-    private Object getRemoteInterface() {
-        final IBinder binder = ServiceManagerNative.getService(ServiceManagerNative.VS);
-        return IVirtualStorageService.Stub.asInterface(binder);
+        return singleton.get();
     }
 
     public void setVirtualStorage(String packageName, int userId, String vsPath) {
