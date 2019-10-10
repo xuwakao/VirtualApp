@@ -171,4 +171,68 @@ class MethodProxies {
             return 0;
         }
     }
+
+    static class CreateNotificationChannelGroups extends MethodProxy {
+        @Override
+        public String getMethodName() {
+            return "createNotificationChannelGroups";
+        }
+
+        @Override
+        public Object call(Object who, Method method, Object... args) throws Throwable {
+            String pkg = MethodParameterUtils.replaceFirstAppPkg(args);
+            if (getHostPkg().equals(pkg)) {
+                return method.invoke(who, args);
+            }
+            return method.invoke(who, args);
+        }
+    }
+
+    static class GetNotificationChannelGroups extends MethodProxy {
+        @Override
+        public String getMethodName() {
+            return "getNotificationChannelGroups";
+        }
+
+        @Override
+        public Object call(Object who, Method method, Object... args) throws Throwable {
+            String pkg = MethodParameterUtils.replaceFirstAppPkg(args);
+            if (getHostPkg().equals(pkg)) {
+                return method.invoke(who, args);
+            }
+            return method.invoke(who, args);
+        }
+    }
+
+    static class GetNotificationChannel extends MethodProxy {
+        @Override
+        public String getMethodName() {
+            return "getNotificationChannel";
+        }
+
+        @Override
+        public Object call(Object who, Method method, Object... args) throws Throwable {
+            String pkg = MethodParameterUtils.replaceFirstAppPkg(args);
+            if (getHostPkg().equals(pkg)) {
+                return method.invoke(who, args);
+            }
+            return method.invoke(who, args);
+        }
+    }
+
+    static class CreateNotificationChannels extends MethodProxy {
+        @Override
+        public String getMethodName() {
+            return "createNotificationChannels";
+        }
+
+        @Override
+        public Object call(Object who, Method method, Object... args) throws Throwable {
+            String pkg = MethodParameterUtils.replaceFirstAppPkg(args);
+            if (getHostPkg().equals(pkg)) {
+                return method.invoke(who, args);
+            }
+            return method.invoke(who, args);
+        }
+    }
 }
