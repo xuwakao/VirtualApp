@@ -14,6 +14,7 @@ import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.stub.DaemonService;
 import com.lody.virtual.helper.compat.BundleCompat;
 import com.lody.virtual.helper.ipcbus.IPCBus;
+import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.server.accounts.VAccountManagerService;
 import com.lody.virtual.server.am.BroadcastSystem;
 import com.lody.virtual.server.am.VActivityManagerService;
@@ -37,12 +38,11 @@ import com.lody.virtual.server.pm.VPackageManagerService;
 import com.lody.virtual.server.pm.VUserManagerService;
 import com.lody.virtual.server.vs.VirtualStorageService;
 
-import mirror.android.app.job.IJobScheduler;
-
 /**
  * @author Lody
  */
 public final class BinderProvider extends ContentProvider {
+    private static final String TAG = "BinderProvider";
 
     private final ServiceFetcher mServiceFetcher = new ServiceFetcher();
 
@@ -72,6 +72,7 @@ public final class BinderProvider extends ContentProvider {
         IPCBus.register(IVirtualStorageService.class, VirtualStorageService.get());
         IPCBus.register(IDeviceInfoManager.class, VDeviceManagerService.get());
         IPCBus.register(IVirtualLocationManager.class, VirtualLocationService.get());
+        VLog.d(TAG, "app process start : " + VirtualCore.get().getProcessType());
         return true;
     }
 

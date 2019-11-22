@@ -57,7 +57,7 @@ public class PackageParserEx {
             p.mSignatures = new Signature[]{new Signature(sig)};
             VLog.d(TAG, "Using fake-signature feature on : " + p.packageName);
         } else {
-            PackageParserCompat.collectCertificates(parser, p, PackageParser.PARSE_IS_SYSTEM);
+            PackageParserCompat.collectCertificates(parser, p, PackageParser.PARSE_IS_SYSTEM, true);
         }
         return buildPackageCache(p);
     }
@@ -172,7 +172,11 @@ public class PackageParserEx {
             }
         }
         cache.applicationInfo = p.applicationInfo;
-        cache.mSignatures = p.mSignatures;
+        if(Build.VERSION.SDK_INT < 28) {
+            cache.mSignatures = p.mSignatures;
+        } else {
+            cache.mSignatures = p.mSigningDetails.signatures;
+        }
         cache.mAppMetaData = p.mAppMetaData;
         cache.packageName = p.packageName;
         cache.mPreferredOrder = p.mPreferredOrder;
@@ -200,7 +204,15 @@ public class PackageParserEx {
         ai.name = ComponentFixer.fixComponentClassName(ps.packageName, ai.name);
         ai.publicSourceDir = ps.apkPath;
         ai.sourceDir = ps.apkPath;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+
+        if (Build.VERSION.SDK_INT >= 28) {
+            ai.splitSourceDirs = null;
+            ai.splitPublicSourceDirs = null;
+            ApplicationInfoL.scanSourceDir.set(ai, ai.dataDir);
+            ApplicationInfoL.scanPublicSourceDir.set(ai, ai.dataDir);
+            String str = (String)ApplicationInfoL.primaryCpuAbi.get(VirtualCore.get().getContext().getApplicationInfo());
+            ApplicationInfoL.primaryCpuAbi.set(ai, str);
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             ai.splitSourceDirs = new String[]{ps.apkPath};
             ai.splitPublicSourceDirs = ai.splitSourceDirs;
             ApplicationInfoL.scanSourceDir.set(ai, ai.dataDir);

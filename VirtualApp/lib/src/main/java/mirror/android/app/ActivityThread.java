@@ -95,8 +95,9 @@ public class ActivityThread {
 
     public static class H {
         public static Class<?> TYPE = RefClass.load(H.class, "android.app.ActivityThread$H");
-        public static RefStaticInt LAUNCH_ACTIVITY;
         public static RefStaticInt CREATE_SERVICE;
+        public static RefStaticInt EXECUTE_TRANSACTION;
+        public static RefStaticInt LAUNCH_ACTIVITY;
         public static RefStaticInt SCHEDULE_CRASH;
     }
 }

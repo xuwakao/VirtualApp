@@ -298,6 +298,10 @@ public final class VirtualCore {
         return ProcessType.Server == processType;
     }
 
+    public ProcessType getProcessType() {
+        return processType;
+    }
+
     /**
      * @return the <em>actual</em> process name
      */
