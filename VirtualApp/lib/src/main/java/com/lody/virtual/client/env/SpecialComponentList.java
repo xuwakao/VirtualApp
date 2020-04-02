@@ -6,7 +6,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Build;
 
-import com.google.devtools.build.android.desugar.runtime.ThrowableExtension;
+//import com.google.devtools.build.android.desugar.runtime.ThrowableExtension;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -82,7 +82,7 @@ public final class SpecialComponentList {
                     SPEC_SYSTEM_APP_LIST.add(webViewPkgN);
                 }
             } catch (Throwable e) {
-                ThrowableExtension.printStackTrace(e);
+//                ThrowableExtension.printStackTrace(e);
             }
         }
     }

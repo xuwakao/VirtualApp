@@ -9,7 +9,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 
-import com.google.devtools.build.android.desugar.runtime.ThrowableExtension;
+//import com.google.devtools.build.android.desugar.runtime.ThrowableExtension;
 import com.lody.virtual.client.VClientImpl;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.interfaces.IInjector;
@@ -53,7 +53,7 @@ public class HCallbackStub implements Handler.Callback, IInjector {
                 }
             }
         } catch (Exception exception) {
-            ThrowableExtension.printStackTrace(exception);
+//            ThrowableExtension.printStackTrace(exception);
         }
 
         CREATE_SERVICE = ActivityThread.H.CREATE_SERVICE.get();
@@ -139,7 +139,7 @@ public class HCallbackStub implements Handler.Callback, IInjector {
                             return handleLaunchActivity2(msg);
                         }
                     } catch (Exception e) {
-                        ThrowableExtension.printStackTrace(e);
+//                        ThrowableExtension.printStackTrace(e);
                     }
                 }
             }
@@ -205,7 +205,7 @@ public class HCallbackStub implements Handler.Callback, IInjector {
                             return true;
                         }
                     } catch (Exception e) {
-                        ThrowableExtension.printStackTrace(e);
+//                        ThrowableExtension.printStackTrace(e);
                     }
                 }
             }
