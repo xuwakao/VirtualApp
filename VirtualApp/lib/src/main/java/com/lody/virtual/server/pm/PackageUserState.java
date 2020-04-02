@@ -23,17 +23,20 @@ public class PackageUserState implements Parcelable {
     public boolean launched;
     public boolean hidden;
     public boolean installed;
+    public boolean plugin;
 
     public PackageUserState() {
         installed = false;
         launched = true;
         hidden = false;
+        plugin = false;
     }
 
     protected PackageUserState(Parcel in) {
         this.launched = in.readByte() != 0;
         this.hidden = in.readByte() != 0;
         this.installed = in.readByte() != 0;
+        this.plugin = in.readByte() != 0;
     }
 
     @Override
@@ -46,5 +49,6 @@ public class PackageUserState implements Parcelable {
         dest.writeByte(this.launched ? (byte) 1 : (byte) 0);
         dest.writeByte(this.hidden ? (byte) 1 : (byte) 0);
         dest.writeByte(this.installed ? (byte) 1 : (byte) 0);
+        dest.writeByte(this.plugin ? (byte) 1 : (byte) 0);
     }
 }

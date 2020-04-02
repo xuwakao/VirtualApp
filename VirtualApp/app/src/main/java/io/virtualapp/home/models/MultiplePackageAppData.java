@@ -15,6 +15,7 @@ public class MultiplePackageAppData implements AppData {
     public int userId;
     public boolean isFirstOpen;
     public boolean isLoading;
+    public boolean isPlugin;
     public Drawable icon;
     public String name;
 
@@ -22,6 +23,7 @@ public class MultiplePackageAppData implements AppData {
         this.userId = userId;
         this.appInfo = VirtualCore.get().getInstalledAppInfo(target.packageName, 0);
         this.isFirstOpen = !appInfo.isLaunched(userId);
+        this.isPlugin = appInfo.isPlugin;
         if (target.icon != null) {
             Drawable.ConstantState state = target.icon.getConstantState();
             if (state != null) {
@@ -69,5 +71,10 @@ public class MultiplePackageAppData implements AppData {
     @Override
     public boolean canCreateShortcut() {
         return true;
+    }
+
+    @Override
+    public boolean isPlugin() {
+        return isPlugin;
     }
 }

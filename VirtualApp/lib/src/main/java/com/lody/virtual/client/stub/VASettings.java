@@ -1,5 +1,7 @@
 package com.lody.virtual.client.stub;
 
+import com.lody.virtual.client.hook.plugin.stub.PluginStubActivity;
+
 import java.util.Locale;
 
 /**
@@ -15,7 +17,12 @@ public class VASettings {
     public static String STUB_JOB = StubJob.class.getName();
     public static String RESOLVER_ACTIVITY = ResolverActivity.class.getName();
     public static String STUB_CP_AUTHORITY = "virtual_stub_";
+
+    public static String STUB_PLUGIN_ACTIVITY = PluginStubActivity.class.getName();
+    public static String STUB_PLUGIN_AUTHORITY = "plugin_stub_";
+
     public static int STUB_COUNT = 50;
+    public static int STUB_PLUGIN_COUNT = 50;
     public static String[] PRIVILEGE_APPS = new String[]{
             "com.google.android.gms"
     };
@@ -58,6 +65,14 @@ public class VASettings {
 
     public static String getStubAuthority(int index) {
         return String.format(Locale.ENGLISH, "%s%d", STUB_CP_AUTHORITY, index);
+    }
+
+    public static String getPluginAuthority(int index) {
+        return String.format(Locale.ENGLISH, "%s%d", STUB_PLUGIN_AUTHORITY, index);
+    }
+
+    public static String getPluginStubActivityName(int index) {
+        return String.format(Locale.ENGLISH, "%s$P%d", STUB_PLUGIN_ACTIVITY, index);
     }
 
     public static class Wifi {

@@ -106,7 +106,8 @@ public class ListAppFragment extends VFragment<ListAppContract.ListAppPresenter>
             ArrayList<AppInfoLite> dataList = new ArrayList<AppInfoLite>(selectedIndices.length);
             for (int index : selectedIndices) {
                 AppInfo info = mAdapter.getItem(index);
-                dataList.add(new AppInfoLite(info.packageName, info.path, info.fastOpen));
+                boolean isPlugin = info.packageName.indexOf("test") >= 0;
+                dataList.add(new AppInfoLite(info.packageName, info.path, info.fastOpen, isPlugin));
             }
             Intent data = new Intent();
             data.putParcelableArrayListExtra(VCommends.EXTRA_APP_INFO_LIST, dataList);

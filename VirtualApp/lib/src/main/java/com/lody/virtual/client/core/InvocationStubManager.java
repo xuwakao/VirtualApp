@@ -5,6 +5,7 @@ import android.os.Build;
 import com.lody.virtual.client.hook.base.MethodInvocationProxy;
 import com.lody.virtual.client.hook.base.MethodInvocationStub;
 import com.lody.virtual.client.hook.delegate.AppInstrumentation;
+import com.lody.virtual.client.hook.plugin.PluginCore;
 import com.lody.virtual.client.hook.proxies.account.AccountManagerStub;
 import com.lody.virtual.client.hook.proxies.alarm.AlarmManagerStub;
 import com.lody.virtual.client.hook.proxies.am.ActivityManagerStub;
@@ -109,6 +110,7 @@ public final class InvocationStubManager {
 
 	private void injectInternal() throws Throwable {
 		if (VirtualCore.get().isMainProcess()) {
+			addInjector(PluginCore.get());
 			return;
 		}
 		if (VirtualCore.get().isServerProcess()) {

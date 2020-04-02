@@ -58,4 +58,9 @@ public class AddAppButton implements AppData {
     public boolean canCreateShortcut() {
         return false;
     }
+
+    @Override
+    public boolean isPlugin() {
+        return false;
+    }
 }

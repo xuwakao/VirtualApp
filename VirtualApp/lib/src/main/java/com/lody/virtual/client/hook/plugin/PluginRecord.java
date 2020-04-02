@@ -1,4 +1,4 @@
-package com.lody.virtual.server.am;
+package com.lody.virtual.client.hook.plugin;
 
 import android.content.pm.ApplicationInfo;
 import android.os.Binder;
@@ -7,19 +7,17 @@ import android.os.IInterface;
 
 import com.lody.virtual.client.IVClient;
 import com.lody.virtual.os.VUserHandle;
-import com.lody.virtual.plugin.IPluginClient;
 
 import java.util.HashSet;
 import java.util.Set;
 
-final class ProcessRecord extends Binder implements Comparable<ProcessRecord> {
+public final class PluginRecord extends Binder implements Comparable<PluginRecord> {
 
 	final ConditionVariable lock = new ConditionVariable();
 	public final ApplicationInfo info; // all about the first app in the process
 	final public String processName; // name of the process
 	final Set<String> pkgList = new HashSet<>(); // List of packages
 	public IVClient client;
-	public IPluginClient pluginClient;
 	IInterface appThread;
 	public int pid;
 	public int vuid;
@@ -28,7 +26,7 @@ final class ProcessRecord extends Binder implements Comparable<ProcessRecord> {
 	boolean doneExecuting;
     int priority;
 
-	public ProcessRecord(ApplicationInfo info, String processName, int vuid, int vpid) {
+	public PluginRecord(ApplicationInfo info, String processName, int vuid, int vpid) {
 		this.info = info;
 		this.vuid = vuid;
 		this.vpid = vpid;
@@ -42,12 +40,12 @@ final class ProcessRecord extends Binder implements Comparable<ProcessRecord> {
 			return true;
 		if (o == null || getClass() != o.getClass())
 			return false;
-		ProcessRecord record = (ProcessRecord) o;
+		PluginRecord record = (PluginRecord) o;
 		return processName != null ? processName.equals(record.processName) : record.processName == null;
 	}
 
     @Override
-    public int compareTo(ProcessRecord another) {
+    public int compareTo(PluginRecord another) {
         return this.priority - another.priority;
     }
 }

@@ -12,7 +12,7 @@ import com.lody.virtual.remote.InstalledAppInfo;
 
 public class PackageSetting implements Parcelable {
 
-    public static final Parcelable.Creator<PackageSetting> CREATOR = new Parcelable.Creator<PackageSetting>() {
+    public static final Creator<PackageSetting> CREATOR = new Creator<PackageSetting>() {
         @Override
         public PackageSetting createFromParcel(Parcel source) {
             return new PackageSetting(source);
@@ -30,6 +30,7 @@ public class PackageSetting implements Parcelable {
     public boolean dependSystem;
     @Deprecated
     public boolean skipDexOpt;
+    public boolean isPlugin;
     public int appId;
     public long firstInstallTime;
     public long lastUpdateTime;
@@ -43,14 +44,14 @@ public class PackageSetting implements Parcelable {
         this.apkPath = in.readString();
         this.libPath = in.readString();
         this.dependSystem = in.readByte() != 0;
-        this.appId = in.readInt();
-        //noinspection unchecked
-        this.userState = in.readSparseArray(PackageUserState.class.getClassLoader());
         this.skipDexOpt = in.readByte() != 0;
+        this.isPlugin = in.readByte() != 0;
+        this.appId = in.readInt();
+        this.userState = in.readSparseArray(PackageUserState.class.getClassLoader());
     }
 
     public InstalledAppInfo getAppInfo() {
-        return new InstalledAppInfo(packageName, apkPath, libPath, dependSystem, skipDexOpt, appId);
+        return new InstalledAppInfo(packageName, apkPath, libPath, dependSystem, skipDexOpt, appId, isPlugin);
     }
 
     PackageUserState modifyUserState(int userId) {
@@ -62,11 +63,12 @@ public class PackageSetting implements Parcelable {
         return state;
     }
 
-    void setUserState(int userId, boolean launched, boolean hidden, boolean installed) {
+    void setUserState(int userId, boolean launched, boolean hidden, boolean installed, boolean plugin) {
         PackageUserState state = modifyUserState(userId);
         state.launched = launched;
         state.hidden = hidden;
         state.installed = installed;
+        state.plugin = plugin;
     }
 
     PackageUserState readUserState(int userId) {
@@ -92,10 +94,10 @@ public class PackageSetting implements Parcelable {
         dest.writeString(this.apkPath);
         dest.writeString(this.libPath);
         dest.writeByte(this.dependSystem ? (byte) 1 : (byte) 0);
-        dest.writeInt(this.appId);
-        //noinspection unchecked
-        dest.writeSparseArray((SparseArray) this.userState);
         dest.writeByte(this.skipDexOpt ? (byte) 1 : (byte) 0);
+        dest.writeByte(this.isPlugin ? (byte) 1 : (byte) 0);
+        dest.writeInt(this.appId);
+        dest.writeSparseArray((SparseArray) this.userState);
     }
 
     public boolean isLaunched(int userId) {
@@ -110,6 +112,10 @@ public class PackageSetting implements Parcelable {
         return readUserState(userId).installed;
     }
 
+    public boolean isPlugin(int userId) {
+        return readUserState(userId).plugin;
+    }
+
     public void setLaunched(int userId, boolean launched) {
         modifyUserState(userId).launched = launched;
     }
@@ -121,4 +127,5 @@ public class PackageSetting implements Parcelable {
     public void setInstalled(int userId, boolean installed) {
         modifyUserState(userId).installed = installed;
     }
+
 }

@@ -47,4 +47,9 @@ public class EmptyAppData implements AppData {
     public boolean canCreateShortcut() {
         return false;
     }
+
+    @Override
+    public boolean isPlugin() {
+        return false;
+    }
 }

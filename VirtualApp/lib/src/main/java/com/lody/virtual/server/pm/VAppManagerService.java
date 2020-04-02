@@ -186,6 +186,8 @@ public class VAppManagerService implements IAppManager {
         if (!libDir.exists() && !libDir.mkdirs()) {
             return InstallResult.makeFailure("Unable to create lib dir.");
         }
+
+        boolean isPlugin = (flags & InstallStrategy.INSTALL_PLUGIN) != 0;
         boolean dependSystem = (flags & InstallStrategy.DEPEND_SYSTEM_IF_EXIST) != 0
                 && VirtualCore.get().isOutsideInstalled(pkg.packageName);
 
@@ -194,7 +196,7 @@ public class VAppManagerService implements IAppManager {
         }
 
         NativeLibraryHelperCompat.copyNativeBinaries(new File(path), libDir);
-        if (!dependSystem) {
+        if (!dependSystem || isPlugin) {
             File privatePackageFile = new File(appDir, "base.apk");
             File parentFolder = privatePackageFile.getParentFile();
             if (!parentFolder.exists() && !parentFolder.mkdirs()) {
@@ -221,6 +223,7 @@ public class VAppManagerService implements IAppManager {
             ps = new PackageSetting();
         }
         ps.dependSystem = dependSystem;
+        ps.isPlugin = isPlugin;
         ps.apkPath = packageFile.getPath();
         ps.libPath = libDir.getPath();
         ps.packageName = pkg.packageName;
@@ -232,13 +235,13 @@ public class VAppManagerService implements IAppManager {
             ps.lastUpdateTime = installTime;
             for (int userId : VUserManagerService.get().getUserIds()) {
                 boolean installed = userId == 0;
-                ps.setUserState(userId, false/*launched*/, false/*hidden*/, installed);
+                ps.setUserState(userId, false/*launched*/, false/*hidden*/, installed, isPlugin);
             }
         }
         PackageParserEx.savePackageCache(pkg);
         PackageCacheManager.put(pkg, ps);
         mPersistenceLayer.save();
-        if (!dependSystem) {
+        if (!dependSystem || isPlugin) {
             boolean runDexOpt = false;
             if (VirtualRuntime.isArt()) {
                 try {

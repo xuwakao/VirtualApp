@@ -19,6 +19,7 @@ import android.util.Log;
 
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.fixer.ComponentFixer;
+import com.lody.virtual.client.hook.plugin.PluginFixer;
 import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.compat.ObjectsCompat;
 import com.lody.virtual.os.VUserHandle;
@@ -292,6 +293,7 @@ public class VPackageManagerService implements IPackageManager {
                 if (a != null) {
                     ActivityInfo activityInfo = PackageParserEx.generateActivityInfo(a, flags, ps.readUserState(userId), userId);
                     ComponentFixer.fixComponentInfo(ps, activityInfo, userId);
+                    PluginFixer.fixApplicationInfo(ps, activityInfo, userId);
                     return activityInfo;
                 }
             }

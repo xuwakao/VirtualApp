@@ -23,7 +23,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.IInterface;
-import android.os.Parcel;
 import android.os.Process;
 import android.os.RemoteException;
 import android.os.SystemClock;
@@ -42,15 +41,14 @@ import com.lody.virtual.helper.compat.BundleCompat;
 import com.lody.virtual.helper.compat.IApplicationThreadCompat;
 import com.lody.virtual.helper.utils.ComponentUtils;
 import com.lody.virtual.helper.utils.VLog;
-import com.lody.virtual.os.VBinder;
 import com.lody.virtual.os.VUserHandle;
+import com.lody.virtual.plugin.IPluginClient;
 import com.lody.virtual.remote.AppTaskInfo;
 import com.lody.virtual.remote.BadgerInfo;
 import com.lody.virtual.remote.PendingIntentData;
 import com.lody.virtual.remote.PendingResultData;
 import com.lody.virtual.remote.VParceledListSlice;
 import com.lody.virtual.server.interfaces.IActivityManager;
-import com.lody.virtual.server.interfaces.IProcessObserver;
 import com.lody.virtual.server.pm.PackageCacheManager;
 import com.lody.virtual.server.pm.PackageSetting;
 import com.lody.virtual.server.pm.VAppManagerService;
@@ -89,6 +87,13 @@ public class VActivityManagerService implements IActivityManager {
             .getSystemService(Context.ACTIVITY_SERVICE);
     private NotificationManager nm = (NotificationManager) VirtualCore.get().getContext()
             .getSystemService(Context.NOTIFICATION_SERVICE);
+
+
+    /**
+     * Plugin records
+     */
+    private final SparseArray<ProcessRecord> mPluginPidsSelfLocked = new SparseArray<ProcessRecord>();
+    private final ProcessMap<ProcessRecord> mPluginNames = new ProcessMap<ProcessRecord>();
 
     public static VActivityManagerService get() {
         return sService.get();
@@ -676,6 +681,52 @@ public class VActivityManagerService implements IActivityManager {
         return null;
     }
 
+    private void attachPlugin(int pid, final IBinder clientBinder) {
+        final IPluginClient client = IPluginClient.Stub.asInterface(clientBinder);
+        if (client == null) {
+            return;
+        }
+        IInterface thread = null;
+        try {
+            thread = ApplicationThreadCompat.asInterface(client.getAppThread());
+        } catch (RemoteException e) {
+            // process has dead
+        }
+        if (thread == null) {
+            return;
+        }
+        ProcessRecord app = null;
+        try {
+            IBinder token = client.getToken();
+            if (token instanceof ProcessRecord) {
+                app = (ProcessRecord) token;
+            }
+        } catch (RemoteException e) {
+            // process has dead
+        }
+        if (app == null) {
+            return;
+        }
+        try {
+            final ProcessRecord record = app;
+            clientBinder.linkToDeath(new IBinder.DeathRecipient() {
+                @Override
+                public void binderDied() {
+                    clientBinder.unlinkToDeath(this, 0);
+                    onProcessDead(record);
+                }
+            }, 0);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+        app.pluginClient = client;
+        app.appThread = thread;
+        app.pid = pid;
+        synchronized (mProcessNames) {
+            mPluginNames.put(app.processName, app.vuid, app);
+            mPluginPidsSelfLocked.put(app.vpid, app);
+        }
+    }
 
     private void attachClient(int pid, final IBinder clientBinder) {
         final IVClient client = IVClient.Stub.asInterface(clientBinder);
@@ -757,6 +808,24 @@ public class VActivityManagerService implements IActivityManager {
         if (ps == null || info == null) {
             return null;
         }
+
+        if (ps.isPlugin(userId)) {
+            int uid = VUserHandle.getUid(userId, ps.appId);
+            ProcessRecord app = mPluginNames.get(processName, uid);
+            if (app != null && app.pluginClient.asBinder().isBinderAlive()) {
+                return app;
+            }
+            int vpid = queryFreeStubPluginLocked();
+            if (vpid == -1) {
+                return null;
+            }
+            app = performStartPluginLocked(uid, vpid, info, processName);
+            if (app != null) {
+                app.pkgList.add(info.packageName);
+            }
+            return app;
+        }
+
         if (!ps.isLaunched(userId)) {
             sendFirstLaunchBroadcast(ps, userId);
             ps.setLaunched(userId, true);
@@ -815,12 +884,49 @@ public class VActivityManagerService implements IActivityManager {
         return app;
     }
 
+    private ProcessRecord performStartPluginLocked(int vuid, int vpid, ApplicationInfo info, String processName) {
+        ProcessRecord app = new ProcessRecord(info, processName, vuid, vpid);
+        Bundle extras = new Bundle();
+        BundleCompat.putBinder(extras, "_VA_|_binder_", app);
+        extras.putInt("_VA_|_vuid_", vuid);
+        extras.putInt("_VA_|_vpid_", vpid);
+        extras.putString("_VA_|_process_", processName);
+        extras.putString("_VA_|_pkg_", info.packageName);
+        Bundle res = ProviderCall.call(VASettings.getPluginAuthority(vpid), "_VA_|_init_plugin_", null, extras);
+        if (res == null) {
+            return null;
+        }
+        int pid = res.getInt("_VA_|_pid_");
+        IBinder clientBinder = BundleCompat.getBinder(res, "_VA_|_client_");
+        attachPlugin(pid, clientBinder);
+        return app;
+    }
+
     private int queryFreeStubProcessLocked() {
         for (int vpid = 0; vpid < VASettings.STUB_COUNT; vpid++) {
             int N = mPidsSelfLocked.size();
             boolean using = false;
             while (N-- > 0) {
                 ProcessRecord r = mPidsSelfLocked.valueAt(N);
+                if (r.vpid == vpid) {
+                    using = true;
+                    break;
+                }
+            }
+            if (using) {
+                continue;
+            }
+            return vpid;
+        }
+        return -1;
+    }
+
+    private int queryFreeStubPluginLocked() {
+        for (int vpid = 0; vpid < VASettings.STUB_COUNT; vpid++) {
+            int N = mPluginPidsSelfLocked.size();
+            boolean using = false;
+            while (N-- > 0) {
+                ProcessRecord r = mPluginPidsSelfLocked.valueAt(N);
                 if (r.vpid == vpid) {
                     using = true;
                     break;
