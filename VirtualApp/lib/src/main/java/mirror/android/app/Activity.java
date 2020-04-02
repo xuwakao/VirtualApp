@@ -13,6 +13,7 @@ import mirror.RefInt;
 public class Activity {
     public static Class<?> TYPE = RefClass.load(Activity.class, "android.app.Activity");
     public static RefObject<ActivityInfo> mActivityInfo;
+    public static RefObject<android.app.Application> mApplication;
     public static RefBoolean mFinished;
     public static RefObject<android.app.Activity> mParent;
     public static RefInt mResultCode;

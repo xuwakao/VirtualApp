@@ -1,5 +1,6 @@
 package com.lody.virtual.client.hook.plugin;
 
+import android.app.Application;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
@@ -10,13 +11,10 @@ import com.lody.virtual.BuildConfig;
 import com.lody.virtual.client.core.InvocationStubManager;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.ipc.VPackageManager;
-import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.plugin.IPluginClient;
 import com.lody.virtual.remote.InstalledAppInfo;
-
-import java.lang.reflect.InvocationTargetException;
 
 import mirror.android.app.ActivityThread;
 
@@ -34,6 +32,8 @@ public class PluginImpl extends IPluginClient.Stub {
     private PluginContext mPluginContext;
     private InstalledAppInfo mInstalledAppInfo;
     private ApplicationInfo mApplicationInfo;
+    private Object mLoadedApk;
+    private Application mApp;
 
     public static PluginImpl create() {
         return new PluginImpl();
@@ -54,24 +54,27 @@ public class PluginImpl extends IPluginClient.Stub {
 
         try {
             loadPlugin();
-            callEntry();
+            InvocationStubManager.getInstance().checkEnv(PluginInstrumentation.class);
+            makeApplication();
+            mPluginContext.setApplication(mApp);
         } catch (PackageManager.NameNotFoundException e) {
-            e.printStackTrace();
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
+            VLog.e(TAG, "package not found " + e);
         }
-        InvocationStubManager.getInstance().checkEnv(PluginInstrumentation.class);
     }
 
-    private void callEntry() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        //TODO test code
-        Reflect.on("com.owttwo.testcase.Entry", mPluginDexClassLoader)
-                .exactMethod("create", new Class[]{Context.class, ClassLoader.class, IBinder.class})
-                .invoke(null, mPluginContext, getClass().getClassLoader(), null);
+    private Application makeApplication() {
+        mApp = null;
+        String appClass = mApplicationInfo.className;
+        PluginInstrumentation instrumentation = PluginInstrumentation.getDefault();
+        try {
+            mApp = instrumentation.newApplication(
+                    mPluginDexClassLoader, appClass, mPluginContext);
+            instrumentation.callApplicationOnCreate(mApp);
+            mLoadedApk = mirror.android.app.Application.mLoadedApk.get(mApp);
+        } catch (Exception e) {
+            VLog.e(TAG, "makeApplication error " + e);
+        }
+        return mApp;
     }
 
     private boolean loadPlugin() throws PackageManager.NameNotFoundException {
@@ -147,5 +150,13 @@ public class PluginImpl extends IPluginClient.Stub {
 
     public ApplicationInfo getApplicationInfo() {
         return mApplicationInfo;
+    }
+
+    public Object getLoadedApk() {
+        return mLoadedApk;
+    }
+
+    public Application getApp() {
+        return mApp;
     }
 }

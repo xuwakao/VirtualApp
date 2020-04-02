@@ -16,10 +16,9 @@
 
 package com.lody.virtual.client.hook.plugin;
 
-import android.content.ComponentName;
+import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
-import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.res.AssetManager;
@@ -32,7 +31,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewStub;
 
-import com.lody.virtual.client.env.Constants;
 import com.lody.virtual.client.hook.utils.FilePermissionUtils;
 import com.lody.virtual.os.VEnvironment;
 import com.lody.virtual.remote.InstalledAppInfo;
@@ -75,6 +73,7 @@ public class PluginContext extends ContextThemeWrapper {
             return handleCreateView(name, context, attrs);
         }
     };
+    private Application mApplication;
 
     public PluginContext(Context base, int themeResId, ClassLoader cl, Resources r,
                          String plugin, int userId, InstalledAppInfo installedAppInfo) {
@@ -86,6 +85,10 @@ public class PluginContext extends ContextThemeWrapper {
         mUserId = userId;
         mInstallAppInfo = installedAppInfo;
         mContextInjector = null;
+    }
+
+    public void setApplication(Application application) {
+        mApplication = application;
     }
 
     @Override
@@ -397,28 +400,12 @@ public class PluginContext extends ContextThemeWrapper {
 
     @Override
     public String getPackageName() {
-        // NOTE 请不要修改此方法，因为有太多的地方用到了PackageName
-        // 为兼容性考虑，请直接返回卫士自身的包名
-        return super.getPackageName();
+        return mInstallAppInfo.packageName;
     }
 
-    // --------------
-    // WARNING 注意！
-    // --------------
-    // 以下所有方法均需框架版本（Framework Ver，见说明书）>=3时才有效（有的需要更高版本）
-    // Added by Jiongxuan Zhang
     @Override
     public Context getApplicationContext() {
-        // 直接获取插件的Application对象
-        // NOTE 切勿获取mLoader.mPkgContext，因为里面的一些方法会调用getApplicationContext（如registerComponentCallback）
-        // NOTE 这样会造成StackOverflow异常。所以只能获取Application对象（框架版本为3以上的会创建此对象）
-        //entry中调用context.getApplicationContext时mApplicationClient还没被赋值，会导致空指针造成插件安装失败
-        /*if (mLoader.mPluginObj.mApplicationClient == null) {
-            return this;
-        } else {
-            return mLoader.mPluginObj.mApplicationClient.getObj();
-        }*/
-        return this;
+        return mApplication;
     }
 
 

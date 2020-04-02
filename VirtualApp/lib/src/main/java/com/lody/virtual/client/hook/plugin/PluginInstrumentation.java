@@ -1,8 +1,13 @@
 package com.lody.virtual.client.hook.plugin;
 
 import android.app.Activity;
+import android.app.Application;
 import android.app.Instrumentation;
+import android.content.Context;
+import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.os.PersistableBundle;
 
 import com.lody.virtual.client.core.VirtualCore;
@@ -52,6 +57,32 @@ public class PluginInstrumentation extends InstrumentationDelegate implements II
     }
 
     @Override
+    public Activity newActivity(Class<?> clazz, Context context, IBinder token, Application application, Intent intent, ActivityInfo info, CharSequence title, Activity parent, String id, Object lastNonConfigurationInstance) throws InstantiationException, IllegalAccessException {
+        Activity activity = super.newActivity(clazz, context, token, application, intent, info, title, parent, id, lastNonConfigurationInstance);
+        StubActivityRecord r = new StubActivityRecord(intent);
+        if (r.intent == null) {
+            return activity;
+        }
+
+        PluginImpl plugin = PluginCore.get().getClient(r.pluginId);
+        mirror.android.app.Activity.mApplication.set(activity, plugin.getApp());
+        return activity;
+    }
+
+    @Override
+    public Activity newActivity(ClassLoader cl, String className, Intent intent) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
+        Activity activity = super.newActivity(cl, className, intent);
+        StubActivityRecord r = new StubActivityRecord(intent);
+        if (r.intent == null) {
+            return activity;
+        }
+
+        PluginImpl plugin = PluginCore.get().getClient(r.pluginId);
+        mirror.android.app.Activity.mApplication.set(activity, plugin.getApp());
+        return activity;
+    }
+
+    @Override
     public void callActivityOnCreate(Activity activity, Bundle icicle) {
         StubActivityRecord r = new StubActivityRecord(activity.getIntent());
         if (r.intent == null) {
@@ -61,6 +92,7 @@ public class PluginInstrumentation extends InstrumentationDelegate implements II
         PluginImpl plugin = PluginCore.get().getClient(r.pluginId);
         PluginFixer.fixActivity(activity, plugin.getApplicationInfo().theme,
                 plugin.getApplicationInfo().icon, plugin.getApplicationInfo().logo);
+        mirror.android.app.Activity.mApplication.set(activity, plugin.getApp());
         super.callActivityOnCreate(activity, icicle);
     }
 
@@ -74,6 +106,7 @@ public class PluginInstrumentation extends InstrumentationDelegate implements II
         PluginImpl plugin = PluginCore.get().getClient(r.pluginId);
         PluginFixer.fixActivity(activity, plugin.getApplicationInfo().theme,
                 plugin.getApplicationInfo().icon, plugin.getApplicationInfo().logo);
+        mirror.android.app.Activity.mApplication.set(activity, plugin.getApp());
         super.callActivityOnCreate(activity, icicle, persistentState);
     }
 }
