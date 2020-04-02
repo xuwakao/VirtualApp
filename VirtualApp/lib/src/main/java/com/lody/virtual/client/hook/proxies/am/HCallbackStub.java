@@ -180,7 +180,6 @@ public class HCallbackStub implements Handler.Callback, IInjector {
                             }
 
                             if (!VClientImpl.get().isBound()) {
-                                Thread.sleep(10000);
                                 VClientImpl.get().bindApplication(info.packageName,
                                         info.processName);
                                 getH().sendMessageAtFrontOfQueue(Message.obtain(msg));
