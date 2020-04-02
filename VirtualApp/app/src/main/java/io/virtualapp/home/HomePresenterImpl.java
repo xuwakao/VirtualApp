@@ -111,7 +111,8 @@ class HomePresenterImpl implements HomeContract.HomePresenter {
                         throw new IllegalStateException();
                     }
                 }
-                boolean success = VirtualCore.get().installPackageAsUser(nextUserId, info.packageName);
+                boolean success = VirtualCore.get().installPackageAsUser(nextUserId, info.packageName,
+                        installedAppInfo.isPackagePlugin(nextUserId));
                 if (!success) {
                     throw new IllegalStateException();
                 }
