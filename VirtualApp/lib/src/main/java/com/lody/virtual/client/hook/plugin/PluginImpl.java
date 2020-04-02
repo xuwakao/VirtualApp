@@ -9,7 +9,6 @@ import android.os.IBinder;
 import com.lody.virtual.BuildConfig;
 import com.lody.virtual.client.core.InvocationStubManager;
 import com.lody.virtual.client.core.VirtualCore;
-import com.lody.virtual.client.hook.delegate.AppInstrumentation;
 import com.lody.virtual.client.ipc.VPackageManager;
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
@@ -65,6 +64,7 @@ public class PluginImpl extends IPluginClient.Stub {
         } catch (InvocationTargetException e) {
             e.printStackTrace();
         }
+        InvocationStubManager.getInstance().checkEnv(PluginInstrumentation.class);
     }
 
     private void callEntry() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
@@ -103,7 +103,7 @@ public class PluginImpl extends IPluginClient.Stub {
             return false;
         }
 
-        mPluginContext = new PluginContext(mContext, android.R.style.Theme, mPluginDexClassLoader,
+        mPluginContext = new PluginContext(mContext, mApplicationInfo.theme, mPluginDexClassLoader,
                 mPkgResources, mPackageName, mVUid, mInstalledAppInfo);
         return true;
     }
