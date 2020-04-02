@@ -34,7 +34,7 @@ public class DaemonService extends Service {
 	public void onCreate() {
 		super.onCreate();
         startService(new Intent(this, InnerService.class));
-        startForeground(NOTIFY_ID, new Notification());
+//        startForeground(NOTIFY_ID, new Notification());
 
 	}
 
@@ -47,8 +47,8 @@ public class DaemonService extends Service {
 
         @Override
         public int onStartCommand(Intent intent, int flags, int startId) {
-            startForeground(NOTIFY_ID, new Notification());
-            stopForeground(true);
+//            startForeground(NOTIFY_ID, new Notification());
+//            stopForeground(true);
             stopSelf();
             return super.onStartCommand(intent, flags, startId);
         }
