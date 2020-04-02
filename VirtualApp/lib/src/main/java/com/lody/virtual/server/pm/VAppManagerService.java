@@ -223,7 +223,6 @@ public class VAppManagerService implements IAppManager {
             ps = new PackageSetting();
         }
         ps.dependSystem = dependSystem;
-        ps.isPlugin = isPlugin;
         ps.apkPath = packageFile.getPath();
         ps.libPath = libDir.getPath();
         ps.packageName = pkg.packageName;
@@ -559,6 +558,11 @@ public class VAppManagerService implements IAppManager {
             ps.setHidden(userId, hidden);
             mPersistenceLayer.save();
         }
+    }
+
+    public boolean isPackagePlugin(int userId, String packageName) {
+        PackageSetting ps = PackageCacheManager.getSetting(packageName);
+        return ps != null && ps.isPlugin(userId);
     }
 
     public int getAppId(String packageName) {

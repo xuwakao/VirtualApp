@@ -28,6 +28,8 @@ public interface IAppManager {
 
     boolean isPackageLaunched(int userId, String packageName) throws RemoteException;
 
+    boolean isPackagePlugin(int userId, String packageName) throws RemoteException;
+
     void setPackageHidden(int userId, String packageName, boolean hidden) throws RemoteException;
 
     boolean installPackageAsUser(int userId, String packageName) throws RemoteException;

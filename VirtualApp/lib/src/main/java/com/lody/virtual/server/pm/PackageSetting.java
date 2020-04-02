@@ -30,7 +30,6 @@ public class PackageSetting implements Parcelable {
     public boolean dependSystem;
     @Deprecated
     public boolean skipDexOpt;
-    public boolean isPlugin;
     public int appId;
     public long firstInstallTime;
     public long lastUpdateTime;
@@ -45,13 +44,12 @@ public class PackageSetting implements Parcelable {
         this.libPath = in.readString();
         this.dependSystem = in.readByte() != 0;
         this.skipDexOpt = in.readByte() != 0;
-        this.isPlugin = in.readByte() != 0;
         this.appId = in.readInt();
         this.userState = in.readSparseArray(PackageUserState.class.getClassLoader());
     }
 
     public InstalledAppInfo getAppInfo() {
-        return new InstalledAppInfo(packageName, apkPath, libPath, dependSystem, skipDexOpt, appId, isPlugin);
+        return new InstalledAppInfo(packageName, apkPath, libPath, dependSystem, skipDexOpt, appId);
     }
 
     PackageUserState modifyUserState(int userId) {
@@ -95,7 +93,6 @@ public class PackageSetting implements Parcelable {
         dest.writeString(this.libPath);
         dest.writeByte(this.dependSystem ? (byte) 1 : (byte) 0);
         dest.writeByte(this.skipDexOpt ? (byte) 1 : (byte) 0);
-        dest.writeByte(this.isPlugin ? (byte) 1 : (byte) 0);
         dest.writeInt(this.appId);
         dest.writeSparseArray((SparseArray) this.userState);
     }

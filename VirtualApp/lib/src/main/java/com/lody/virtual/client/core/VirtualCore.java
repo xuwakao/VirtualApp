@@ -689,6 +689,14 @@ public final class VirtualCore {
         }
     }
 
+    public boolean isPackagePlugin(int userId, String packageName) {
+        try {
+            return getService().isPackagePlugin(userId, packageName);
+        } catch (RemoteException e) {
+            return VirtualRuntime.crash(e);
+        }
+    }
+
     public void setPackageHidden(int userId, String packageName, boolean hidden) {
         try {
             getService().setPackageHidden(userId, packageName, hidden);

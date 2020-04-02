@@ -23,7 +23,7 @@ public class MultiplePackageAppData implements AppData {
         this.userId = userId;
         this.appInfo = VirtualCore.get().getInstalledAppInfo(target.packageName, 0);
         this.isFirstOpen = !appInfo.isLaunched(userId);
-        this.isPlugin = appInfo.isPlugin;
+        this.isPlugin = appInfo.isPackagePlugin(userId);
         if (target.icon != null) {
             Drawable.ConstantState state = target.icon.getConstantState();
             if (state != null) {

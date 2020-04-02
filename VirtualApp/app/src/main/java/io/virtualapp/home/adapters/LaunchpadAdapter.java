@@ -59,6 +59,11 @@ public class LaunchpadAdapter extends RecyclerView.Adapter<LaunchpadAdapter.View
         holder.color = getColor(position);
         holder.iconView.setImageDrawable(data.getIcon());
         holder.nameView.setText(data.getName());
+        if (data.isPlugin()) {
+            holder.nameView.setTextColor(mInflater.getContext().getResources().getColor(R.color.holo_red_dark));
+        } else {
+            holder.nameView.setTextColor(mInflater.getContext().getResources().getColor(R.color.color_white));
+        }
         if (data.isFirstOpen() && !data.isLoading()) {
             holder.firstOpenDot.setVisibility(View.VISIBLE);
         } else {

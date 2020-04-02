@@ -21,16 +21,14 @@ public final class InstalledAppInfo implements Parcelable {
     public String libPath;
     public boolean dependSystem;
     public int appId;
-    public boolean isPlugin;
 
     public InstalledAppInfo(String packageName, String apkPath, String libPath,
-                            boolean dependSystem, boolean skipDexOpt, int appId, boolean isPlugin) {
+                            boolean dependSystem, boolean skipDexOpt, int appId) {
         this.packageName = packageName;
         this.apkPath = apkPath;
         this.libPath = libPath;
         this.dependSystem = dependSystem;
         this.appId = appId;
-        this.isPlugin = isPlugin;
     }
 
     public File getOdexFile() {
@@ -53,6 +51,10 @@ public final class InstalledAppInfo implements Parcelable {
         return VirtualCore.get().isPackageLaunched(userId, packageName);
     }
 
+    public boolean isPackagePlugin(int userId) {
+        return VirtualCore.get().isPackagePlugin(userId, packageName);
+    }
+
     @Override
     public int describeContents() {
         return 0;
@@ -65,7 +67,6 @@ public final class InstalledAppInfo implements Parcelable {
         dest.writeString(this.libPath);
         dest.writeByte(this.dependSystem ? (byte) 1 : (byte) 0);
         dest.writeInt(this.appId);
-        dest.writeByte(this.isPlugin ? (byte) 1 : (byte) 0);
     }
 
     protected InstalledAppInfo(Parcel in) {
@@ -74,7 +75,6 @@ public final class InstalledAppInfo implements Parcelable {
         this.libPath = in.readString();
         this.dependSystem = in.readByte() != 0;
         this.appId = in.readInt();
-        this.isPlugin = in.readByte() != 0;
     }
 
     public static final Creator<InstalledAppInfo> CREATOR = new Creator<InstalledAppInfo>() {
@@ -88,16 +88,4 @@ public final class InstalledAppInfo implements Parcelable {
             return new InstalledAppInfo[size];
         }
     };
-
-    @Override
-    public String toString() {
-        return "InstalledAppInfo{" +
-                "packageName='" + packageName + '\'' +
-                ", apkPath='" + apkPath + '\'' +
-                ", libPath='" + libPath + '\'' +
-                ", dependSystem=" + dependSystem +
-                ", appId=" + appId +
-                ", isPlugin=" + isPlugin +
-                '}';
-    }
 }

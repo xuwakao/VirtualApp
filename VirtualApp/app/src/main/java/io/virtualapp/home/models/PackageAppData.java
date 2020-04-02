@@ -23,7 +23,7 @@ public class PackageAppData implements AppData {
     public PackageAppData(Context context, InstalledAppInfo installedAppInfo) {
         this.packageName = installedAppInfo.packageName;
         this.isFirstOpen = !installedAppInfo.isLaunched(0);
-        this.isPlugin = installedAppInfo.isPlugin;
+        this.isPlugin = installedAppInfo.isPackagePlugin(0);
         loadData(context, installedAppInfo.getApplicationInfo(installedAppInfo.getInstalledUsers()[0]));
     }
 
