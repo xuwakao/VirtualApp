@@ -58,24 +58,30 @@ public class PluginInstrumentation extends InstrumentationDelegate implements II
 
     @Override
     public Activity newActivity(Class<?> clazz, Context context, IBinder token, Application application, Intent intent, ActivityInfo info, CharSequence title, Activity parent, String id, Object lastNonConfigurationInstance) throws InstantiationException, IllegalAccessException {
-        Activity activity = super.newActivity(clazz, context, token, application, intent, info, title, parent, id, lastNonConfigurationInstance);
         StubActivityRecord r = new StubActivityRecord(intent);
         if (r.intent == null) {
-            return activity;
+            return super.newActivity(clazz, context, token, application, intent, info, title, parent, id, lastNonConfigurationInstance);
         }
 
         PluginImpl plugin = PluginCore.get().getClient(r.pluginId);
+        clazz = plugin.loadClass(r.info.name, true);
+        Activity activity = super.newActivity(clazz, context, token, application, intent, info, title, parent, id, lastNonConfigurationInstance);
         mirror.android.app.Activity.mApplication.set(activity, plugin.getApp());
         return activity;
     }
 
     @Override
     public Activity newActivity(ClassLoader cl, String className, Intent intent) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
-        Activity activity = super.newActivity(cl, className, intent);
         StubActivityRecord r = new StubActivityRecord(intent);
         if (r.intent == null) {
-            return activity;
+            return super.newActivity(cl, className, intent);
         }
+
+        className = r.info.name;
+        if (cl instanceof PluginClassLoader) {
+            ((PluginClassLoader) cl).setLoadClassPluginId(r.pluginId);
+        }
+        Activity activity = super.newActivity(cl, className, intent);
 
         PluginImpl plugin = PluginCore.get().getClient(r.pluginId);
         mirror.android.app.Activity.mApplication.set(activity, plugin.getApp());

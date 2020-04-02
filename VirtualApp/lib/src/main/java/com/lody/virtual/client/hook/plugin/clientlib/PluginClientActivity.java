@@ -6,6 +6,11 @@ import android.content.Context;
 public abstract class PluginClientActivity extends Activity {
     @Override
     protected void attachBaseContext(Context newBase) {
+        //not plugin activity
+        if (getApplication() == null) {
+            super.attachBaseContext(newBase);
+            return;
+        }
         super.attachBaseContext(getApplication().getBaseContext());
     }
 }

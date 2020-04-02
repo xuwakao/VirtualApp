@@ -97,17 +97,4 @@ public class PluginCore implements IInjector {
         }
         return null;
     }
-
-    public Class<?> loadClass(String name, boolean resolve) {
-        if (name.indexOf("com.lody.virtual.client.hook.plugin.stub.PluginStubActivity") < 0)
-            return null;
-        name = "com.owttwo.testcase.MainActivity";
-        int vpid = 0;
-        PluginContentProvider contentProvider = mPluginCp.get(vpid);
-        if (contentProvider != null) {
-            Class<?> clz = contentProvider.getClient().loadClass(name, resolve);
-            return clz;
-        }
-        return null;
-    }
 }

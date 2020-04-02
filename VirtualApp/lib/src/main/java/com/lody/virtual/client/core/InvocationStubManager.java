@@ -113,6 +113,7 @@ public final class InvocationStubManager {
 	private void injectInternal() throws Throwable {
 		if (VirtualCore.get().isMainProcess()) {
 			addInjector(PluginCore.get());
+			addInjector(new ActivityManagerStub());
 			return;
 		}
 		if (VirtualCore.get().isServerProcess()) {

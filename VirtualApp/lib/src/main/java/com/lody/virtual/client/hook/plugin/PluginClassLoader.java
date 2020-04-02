@@ -13,6 +13,15 @@ public class PluginClassLoader extends PathClassLoader {
     private static final String TAG = "PluginClassLoader";
 
     private final ClassLoader mOriginal;
+    private int mLoadClassPluginId = Integer.MIN_VALUE;
+
+    private void resetPluginId() {
+        mLoadClassPluginId = Integer.MIN_VALUE;
+    }
+
+    public void setLoadClassPluginId(int loadClassPluginId) {
+        mLoadClassPluginId = loadClassPluginId;
+    }
 
     public PluginClassLoader(ClassLoader originalParent, ClassLoader original) {
         super("", "", originalParent);
@@ -25,20 +34,25 @@ public class PluginClassLoader extends PathClassLoader {
 
     @Override
     protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-        Class<?> loadClass = null;
-        loadClass = PluginCore.get().loadClass(name, resolve);
-        if (loadClass != null) {
-            return loadClass;
-        }
         try {
-            loadClass = mOriginal.loadClass(name);
-            VLog.d(TAG, "Loading class : " + loadClass);
-            return loadClass;
-        } catch (ClassNotFoundException e) {
-            VLog.w(TAG, "class not found in original : " + e);
+            Class<?> loadClass = null;
+            if (mLoadClassPluginId >= 0) {
+                loadClass = PluginCore.get().getClient(mLoadClassPluginId).loadClass(name, resolve);
+            }
+            if (loadClass != null) {
+                return loadClass;
+            }
+            try {
+                loadClass = mOriginal.loadClass(name);
+                VLog.d(TAG, "Loading class : " + loadClass);
+                return loadClass;
+            } catch (ClassNotFoundException e) {
+                VLog.w(TAG, "class not found in original : " + e);
+            }
+            return super.loadClass(name, resolve);
+        } finally {
+            resetPluginId();
         }
-
-        return super.loadClass(name, resolve);
     }
 
     @Override
