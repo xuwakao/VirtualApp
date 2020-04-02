@@ -270,12 +270,13 @@ public class VAppManagerService implements IAppManager {
 
 
     @Override
-    public synchronized boolean installPackageAsUser(int userId, String packageName) {
+    public synchronized boolean installPackageAsUser(int userId, String packageName, boolean plugin) {
         if (VUserManagerService.get().exists(userId)) {
             PackageSetting ps = PackageCacheManager.getSetting(packageName);
             if (ps != null) {
                 if (!ps.isInstalled(userId)) {
                     ps.setInstalled(userId, true);
+                    ps.setPlugin(userId, plugin);
                     notifyAppInstalled(ps, userId);
                     mPersistenceLayer.save();
                     return true;

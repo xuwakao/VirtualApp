@@ -32,7 +32,7 @@ public interface IAppManager {
 
     void setPackageHidden(int userId, String packageName, boolean hidden) throws RemoteException;
 
-    boolean installPackageAsUser(int userId, String packageName) throws RemoteException;
+    boolean installPackageAsUser(int userId, String packageName, boolean plugin) throws RemoteException;
 
     boolean uninstallPackageAsUser(String packageName, int userId) throws RemoteException;
 

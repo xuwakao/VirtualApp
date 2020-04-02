@@ -705,9 +705,9 @@ public final class VirtualCore {
         }
     }
 
-    public boolean installPackageAsUser(int userId, String packageName) {
+    public boolean installPackageAsUser(int userId, String packageName, boolean plugin) {
         try {
-            return getService().installPackageAsUser(userId, packageName);
+            return getService().installPackageAsUser(userId, packageName, plugin);
         } catch (RemoteException e) {
             return VirtualRuntime.crash(e);
         }

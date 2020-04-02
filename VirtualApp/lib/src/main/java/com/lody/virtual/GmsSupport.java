@@ -67,7 +67,7 @@ public class GmsSupport {
             if (userId == 0) {
                 core.installPackage(info.sourceDir, InstallStrategy.DEPEND_SYSTEM_IF_EXIST);
             } else {
-                core.installPackageAsUser(userId, packageName);
+                core.installPackageAsUser(userId, packageName, false);
             }
         }
     }

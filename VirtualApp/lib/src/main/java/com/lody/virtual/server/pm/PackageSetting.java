@@ -125,4 +125,8 @@ public class PackageSetting implements Parcelable {
         modifyUserState(userId).installed = installed;
     }
 
+    public void setPlugin(int userId, boolean plugin) {
+        modifyUserState(userId).plugin = plugin;
+    }
+
 }
