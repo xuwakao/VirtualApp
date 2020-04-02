@@ -621,8 +621,10 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
             component = ComponentUtils.toComponentName(info);
         }
         targetIntent.setType(component.flattenToString());
+
+        int pluginId = targetApp.pluginClient == null ? -1 : targetApp.vpid;
         StubActivityRecord saveInstance = new StubActivityRecord(intent, info,
-                sourceRecord != null ? sourceRecord.component : null, userId);
+                sourceRecord != null ? sourceRecord.component : null, userId, pluginId);
         saveInstance.saveToIntent(targetIntent);
         return targetIntent;
     }

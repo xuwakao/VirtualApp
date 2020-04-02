@@ -23,7 +23,7 @@ final class ProcessRecord extends Binder implements Comparable<ProcessRecord> {
 	IInterface appThread;
 	public int pid;
 	public int vuid;
-	public int vpid;
+	public int vpid;//allocated id for new process or plugin id
 	public int userId;
 	boolean doneExecuting;
     int priority;

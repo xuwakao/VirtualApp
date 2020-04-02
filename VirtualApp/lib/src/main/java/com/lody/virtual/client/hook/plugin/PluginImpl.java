@@ -68,6 +68,7 @@ public class PluginImpl extends IPluginClient.Stub {
     }
 
     private void callEntry() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        //TODO test code
         Reflect.on("com.owttwo.testcase.Entry", mPluginDexClassLoader)
                 .exactMethod("create", new Class[]{Context.class, ClassLoader.class, IBinder.class})
                 .invoke(null, mPluginContext, getClass().getClassLoader(), null);
@@ -142,5 +143,9 @@ public class PluginImpl extends IPluginClient.Stub {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public ApplicationInfo getApplicationInfo() {
+        return mApplicationInfo;
     }
 }

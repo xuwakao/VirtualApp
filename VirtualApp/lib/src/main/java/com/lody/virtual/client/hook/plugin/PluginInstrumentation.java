@@ -9,6 +9,7 @@ import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.hook.delegate.AppInstrumentation;
 import com.lody.virtual.client.hook.delegate.InstrumentationDelegate;
 import com.lody.virtual.client.interfaces.IInjector;
+import com.lody.virtual.remote.StubActivityRecord;
 
 import mirror.android.app.ActivityThread;
 
@@ -52,17 +53,27 @@ public class PluginInstrumentation extends InstrumentationDelegate implements II
 
     @Override
     public void callActivityOnCreate(Activity activity, Bundle icicle) {
-        if(activity.getClass().getName().indexOf("MainActivity") >= 0) {
-            PluginFixer.fixActivity(activity, 2131165184, 2131034112, 2131034112);
+        StubActivityRecord r = new StubActivityRecord(activity.getIntent());
+        if (r.intent == null) {
+            super.callActivityOnCreate(activity, icicle);
+            return;
         }
+        PluginImpl plugin = PluginCore.get().getClient(r.pluginId);
+        PluginFixer.fixActivity(activity, plugin.getApplicationInfo().theme,
+                plugin.getApplicationInfo().icon, plugin.getApplicationInfo().logo);
         super.callActivityOnCreate(activity, icicle);
     }
 
     @Override
     public void callActivityOnCreate(Activity activity, Bundle icicle, PersistableBundle persistentState) {
-        if(activity.getClass().getName().indexOf("MainActivity") >= 0) {
-            PluginFixer.fixActivity(activity, 2131165184, 2131034112, 2131034112);
+        StubActivityRecord r = new StubActivityRecord(activity.getIntent());
+        if (r.intent == null) {
+            super.callActivityOnCreate(activity, icicle);
+            return;
         }
+        PluginImpl plugin = PluginCore.get().getClient(r.pluginId);
+        PluginFixer.fixActivity(activity, plugin.getApplicationInfo().theme,
+                plugin.getApplicationInfo().icon, plugin.getApplicationInfo().logo);
         super.callActivityOnCreate(activity, icicle, persistentState);
     }
 }

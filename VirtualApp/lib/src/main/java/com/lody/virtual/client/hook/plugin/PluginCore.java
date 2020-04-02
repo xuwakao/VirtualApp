@@ -85,13 +85,15 @@ public class PluginCore implements IInjector {
         return mPluginClassLoader;
     }
 
-    public PluginImpl getClient(String componentClass) {
-        if (componentClass.indexOf("com.lody.virtual.client.hook.plugin.stub.PluginStubActivity") >= 0) {
-            int vpid = Integer.valueOf(componentClass.substring(componentClass.length() - 1)).intValue();
-            PluginContentProvider contentProvider = mPluginCp.get(vpid);
-            if (contentProvider != null) {
-                return contentProvider.getClient();
-            }
+    /**
+     * Get plugin client by plugin id
+     * @param vpid plugin id
+     * @return
+     */
+    public PluginImpl getClient(int vpid) {
+        PluginContentProvider contentProvider = mPluginCp.get(vpid);
+        if (contentProvider != null) {
+            return contentProvider.getClient();
         }
         return null;
     }
