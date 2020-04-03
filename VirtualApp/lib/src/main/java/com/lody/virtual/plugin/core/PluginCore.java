@@ -10,7 +10,7 @@ import java.util.HashSet;
 public class PluginCore {
 
     private boolean useHostClassIfNotFound;
-    public SparseArray<PluginImpl> mPlugins = new SparseArray<>();
+    private SparseArray<PluginImpl> mPlugins = new SparseArray<>();
 
     private static class Singleton {
         static final PluginCore singleton = new PluginCore();

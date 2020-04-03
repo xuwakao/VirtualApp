@@ -186,9 +186,9 @@ public class VActivityManagerService implements IActivityManager {
     }
 
     @Override
-    public void onActivityCreated(ComponentName component, ComponentName caller, IBinder token, Intent intent, String affinity, int taskId, int launchMode, int flags) {
+    public void onActivityCreated(ComponentName component, ComponentName caller, IBinder token, Intent intent, String affinity, int taskId, int launchMode, int flags, int pluginId) {
         int pid = Binder.getCallingPid();
-        ProcessRecord targetApp = findProcessLocked(pid);
+        ProcessRecord targetApp = findProcessLocked(pid, pluginId);
         if (targetApp != null) {
             mMainStack.onActivityCreated(targetApp, component, caller, token, intent, affinity, taskId, launchMode, flags);
         }
@@ -1071,6 +1071,13 @@ public class VActivityManagerService implements IActivityManager {
      * @param pid pid
      */
     public ProcessRecord findProcessLocked(int pid) {
+        return mPidsSelfLocked.get(pid);
+    }
+
+    public ProcessRecord findProcessLocked(int pid, int pluginId) {
+        if(pluginId >= 0) {
+            return mPluginPidsSelfLocked.get(pluginId);
+        }
         return mPidsSelfLocked.get(pid);
     }
 

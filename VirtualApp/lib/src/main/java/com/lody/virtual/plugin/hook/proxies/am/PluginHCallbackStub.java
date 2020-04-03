@@ -1,23 +1,20 @@
-package com.lody.virtual.client.hook.proxies.am;
+package com.lody.virtual.plugin.hook.proxies.am;
 
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
-import android.content.pm.ServiceInfo;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 
-//import com.google.devtools.build.android.desugar.runtime.ThrowableExtension;
-import com.lody.virtual.client.VClientImpl;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.interfaces.IInjector;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.helper.utils.ComponentUtils;
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
-import com.lody.virtual.remote.InstalledAppInfo;
+import com.lody.virtual.plugin.core.PluginCore;
 import com.lody.virtual.remote.StubActivityRecord;
 
 import java.util.Iterator;
@@ -31,13 +28,13 @@ import mirror.android.app.IActivityManager;
  * @author Lody
  * @see Handler.Callback
  */
-public class HCallbackStub implements Handler.Callback, IInjector {
+public class PluginHCallbackStub implements Handler.Callback, IInjector {
     private static final int CREATE_SERVICE;
     private static int EXECUTE_TRANSACTION = 159;
     private static int LAUNCH_ACTIVITY = 100;
     private static final int SCHEDULE_CRASH;
     private static final String TAG;
-    private static final HCallbackStub sCallback;
+    private static final PluginHCallbackStub sCallback;
     private boolean mCalling = false;
     private Handler.Callback otherCallback;
 
@@ -53,7 +50,6 @@ public class HCallbackStub implements Handler.Callback, IInjector {
                 }
             }
         } catch (Exception exception) {
-//            ThrowableExtension.printStackTrace(exception);
         }
 
         CREATE_SERVICE = ActivityThread.H.CREATE_SERVICE.get();
@@ -65,14 +61,14 @@ public class HCallbackStub implements Handler.Callback, IInjector {
         }
 
         SCHEDULE_CRASH = crash;
-        TAG = HCallbackStub.class.getSimpleName();
-        sCallback = new HCallbackStub();
+        TAG = PluginHCallbackStub.class.getSimpleName();
+        sCallback = new PluginHCallbackStub();
     }
 
-    private HCallbackStub() {
+    private PluginHCallbackStub() {
     }
 
-    public static HCallbackStub getDefault() {
+    public static PluginHCallbackStub getDefault() {
         return sCallback;
     }
 
@@ -104,10 +100,6 @@ public class HCallbackStub implements Handler.Callback, IInjector {
                         return true;
                     }
                 } else if (CREATE_SERVICE == msg.what) {
-                    if (!VClientImpl.get().isBound()) {
-                        ServiceInfo info = Reflect.on(msg.obj).get("info");
-                        VClientImpl.get().bindApplication(info.packageName, info.processName);
-                    }
                 } else if (SCHEDULE_CRASH == msg.what) {
                     // to avoid the exception send from System.
                     return true;
@@ -139,7 +131,6 @@ public class HCallbackStub implements Handler.Callback, IInjector {
                             return handleLaunchActivity2(msg);
                         }
                     } catch (Exception e) {
-//                        ThrowableExtension.printStackTrace(e);
                     }
                 }
             }
@@ -167,22 +158,8 @@ public class HCallbackStub implements Handler.Callback, IInjector {
                             IBinder token = Reflect.on(r).call("getActivityToken").get();
                             ActivityInfo info = saveInstance.info;
 
-                            if (VClientImpl.get().getToken() == null) {
-                                InstalledAppInfo installedAppInfo = VirtualCore.get().getInstalledAppInfo(
-                                        info.packageName, 0);
-                                if (installedAppInfo == null) {
-                                    return true;
-                                }
-                                VActivityManager.get().processRestarted(info.packageName,
-                                        info.processName, saveInstance.userId);
-                                getH().sendMessageAtFrontOfQueue(Message.obtain(msg));
-                                return false;
-                            }
-
-                            if (!VClientImpl.get().isBound()) {
-                                VClientImpl.get().bindApplication(info.packageName,
-                                        info.processName);
-                                getH().sendMessageAtFrontOfQueue(Message.obtain(msg));
+                            if (PluginCore.get().getPlugin(saveInstance.pluginId) == null) {
+                                VLog.e(TAG, "plugin not launched : " + saveInstance);
                                 return false;
                             }
 
@@ -194,17 +171,9 @@ public class HCallbackStub implements Handler.Callback, IInjector {
                             VActivityManager.get().onActivityCreate(ComponentUtils.toComponentName(info),
                                     caller, token, info, stubIntent, ComponentUtils.getTaskAffinity(info),
                                     taskId, info.launchMode, info.flags, saveInstance.pluginId);
-                            ClassLoader appClassLoader = VClientImpl.get().getClassLoader(info.applicationInfo);
-                            stubIntent.setExtrasClassLoader(appClassLoader);
-
-                            ComponentName componentName = Reflect.on(next).field("mIntent")
-                                    .field("mComponent").get();
-                            Reflect.on(next).set("mIntent", saveInstance.intent);
-                            Reflect.on(next).set("mInfo", saveInstance.info);
                             return true;
                         }
                     } catch (Exception e) {
-//                        ThrowableExtension.printStackTrace(e);
                     }
                 }
             }
@@ -223,18 +192,9 @@ public class HCallbackStub implements Handler.Callback, IInjector {
         ComponentName caller = saveInstance.caller;
         IBinder token = ActivityThread.ActivityClientRecord.token.get(r);
         ActivityInfo info = saveInstance.info;
-        if (VClientImpl.get().getToken() == null) {
-            InstalledAppInfo installedAppInfo = VirtualCore.get().getInstalledAppInfo(info.packageName, 0);
-            if (installedAppInfo == null) {
-                return true;
-            }
-            VActivityManager.get().processRestarted(info.packageName, info.processName, saveInstance.userId);
-            getH().sendMessageAtFrontOfQueue(Message.obtain(msg));
-            return false;
-        }
-        if (!VClientImpl.get().isBound()) {
-            VClientImpl.get().bindApplication(info.packageName, info.processName);
-            getH().sendMessageAtFrontOfQueue(Message.obtain(msg));
+
+        if (PluginCore.get().getPlugin(saveInstance.pluginId) == null) {
+            VLog.e(TAG, "plugin not launched : " + saveInstance);
             return false;
         }
         int taskId = IActivityManager.getTaskForActivity.call(
@@ -243,10 +203,6 @@ public class HCallbackStub implements Handler.Callback, IInjector {
                 false
         );
         VActivityManager.get().onActivityCreate(ComponentUtils.toComponentName(info), caller, token, info, intent, ComponentUtils.getTaskAffinity(info), taskId, info.launchMode, info.flags, saveInstance.pluginId);
-        ClassLoader appClassLoader = VClientImpl.get().getClassLoader(info.applicationInfo);
-        intent.setExtrasClassLoader(appClassLoader);
-        ActivityThread.ActivityClientRecord.intent.set(r, intent);
-        ActivityThread.ActivityClientRecord.activityInfo.set(r, info);
         return true;
     }
 

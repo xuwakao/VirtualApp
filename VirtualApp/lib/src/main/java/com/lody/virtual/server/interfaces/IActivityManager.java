@@ -48,7 +48,7 @@ public interface IActivityManager {
 
     int startActivity(Intent intent, ActivityInfo info, IBinder resultTo, Bundle options, String resultWho, int requestCode, int userId) throws RemoteException;
 
-    void onActivityCreated(ComponentName component, ComponentName caller, IBinder token, Intent intent, String affinity, int taskId, int launchMode, int flags) throws RemoteException;
+    void onActivityCreated(ComponentName component, ComponentName caller, IBinder token, Intent intent, String affinity, int taskId, int launchMode, int flags, int pluginId) throws RemoteException;
 
     void onActivityResumed(int userId, IBinder token) throws RemoteException;
 
