@@ -1,4 +1,4 @@
-package com.lody.virtual.client.hook.plugin.clientlib;
+package com.lody.virtual.plugin.clientlib;
 
 import android.app.Activity;
 import android.content.Context;

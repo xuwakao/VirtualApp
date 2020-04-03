@@ -1,4 +1,4 @@
-package com.lody.virtual.client.hook.plugin;
+package com.lody.virtual.plugin;
 
 import android.content.pm.ApplicationInfo;
 import android.os.Binder;

@@ -1,4 +1,4 @@
-package com.lody.virtual.client.hook.plugin.stub;
+package com.lody.virtual.plugin.stub;
 
 import android.content.ContentProvider;
 import android.content.ContentValues;
@@ -10,8 +10,8 @@ import android.os.IBinder;
 import android.os.Process;
 
 import com.lody.virtual.client.core.VirtualCore;
-import com.lody.virtual.client.hook.plugin.PluginCore;
-import com.lody.virtual.client.hook.plugin.PluginImpl;
+import com.lody.virtual.plugin.PluginCore;
+import com.lody.virtual.plugin.PluginImpl;
 import com.lody.virtual.helper.compat.BundleCompat;
 
 /**

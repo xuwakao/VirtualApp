@@ -1,6 +1,6 @@
 package com.lody.virtual.client.stub;
 
-import com.lody.virtual.client.hook.plugin.stub.PluginStubActivity;
+import com.lody.virtual.plugin.stub.PluginStubActivity;
 
 import java.util.Locale;
 

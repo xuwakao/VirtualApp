@@ -1,17 +1,9 @@
-package com.lody.virtual.client.hook.plugin.stub;
+package com.lody.virtual.plugin.stub;
 
 import android.app.Activity;
-import android.content.ComponentName;
-import android.content.Intent;
-import android.os.Bundle;
 
-import com.lody.virtual.client.core.InvocationStubManager;
-import com.lody.virtual.client.core.VirtualCore;
-import com.lody.virtual.client.hook.plugin.PluginCore;
-import com.lody.virtual.client.hook.plugin.PluginImpl;
-import com.lody.virtual.client.hook.proxies.am.HCallbackStub;
-import com.lody.virtual.client.ipc.VActivityManager;
-import com.lody.virtual.remote.StubActivityRecord;
+import com.lody.virtual.plugin.PluginCore;
+import com.lody.virtual.plugin.PluginImpl;
 
 /**
  * @author Lody

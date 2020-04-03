@@ -1,4 +1,4 @@
-package com.lody.virtual.client.hook.plugin;
+package com.lody.virtual.plugin;
 
 import android.app.Activity;
 import android.content.pm.ActivityInfo;

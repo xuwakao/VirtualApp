@@ -1,9 +1,8 @@
-package com.lody.virtual.client.hook.plugin;
+package com.lody.virtual.plugin;
 
 import com.lody.virtual.client.core.VirtualCore;
-import com.lody.virtual.client.hook.plugin.utils.PluginDexClassLoaderPatch;
+import com.lody.virtual.plugin.utils.PluginDexClassLoaderPatch;
 import com.lody.virtual.helper.utils.Reflect;
-import com.lody.virtual.helper.utils.VLog;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;

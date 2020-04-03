@@ -1,9 +1,9 @@
-package com.lody.virtual.client.hook.plugin;
+package com.lody.virtual.plugin;
 
 import android.content.Context;
 
 import com.lody.virtual.client.core.VirtualCore;
-import com.lody.virtual.client.hook.plugin.stub.PluginContentProvider;
+import com.lody.virtual.plugin.stub.PluginContentProvider;
 import com.lody.virtual.client.interfaces.IInjector;
 import com.lody.virtual.helper.collection.SparseArray;
 

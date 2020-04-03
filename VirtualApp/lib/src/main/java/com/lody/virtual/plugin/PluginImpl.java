@@ -1,4 +1,4 @@
-package com.lody.virtual.client.hook.plugin;
+package com.lody.virtual.plugin;
 
 import android.app.Application;
 import android.content.Context;
@@ -14,7 +14,6 @@ import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.ipc.VPackageManager;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VUserHandle;
-import com.lody.virtual.plugin.IPluginClient;
 import com.lody.virtual.remote.InstalledAppInfo;
 
 import mirror.android.app.ActivityThread;

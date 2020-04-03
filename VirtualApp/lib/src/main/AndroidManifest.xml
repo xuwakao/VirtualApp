@@ -1297,19 +1297,19 @@
             android:process=":p49" />
 
         <activity
-            android:name=".client.hook.plugin.stub.PluginStubActivity$P0"
+            android:name=".plugin.stub.PluginStubActivity$P0"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name=".client.hook.plugin.stub.PluginStubActivity$P1"
+            android:name=".plugin.stub.PluginStubActivity$P1"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name=".client.hook.plugin.stub.PluginStubActivity$P2"
+            android:name=".plugin.stub.PluginStubActivity$P2"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
@@ -1317,14 +1317,14 @@
         <provider
             android:authorities="${applicationId}.plugin_stub_0"
             android:exported="false"
-            android:name=".client.hook.plugin.stub.PluginContentProvider$P0"/>
+            android:name=".plugin.stub.PluginContentProvider$P0"/>
         <provider
             android:authorities="${applicationId}.plugin_stub_1"
             android:exported="false"
-            android:name=".client.hook.plugin.stub.PluginContentProvider$P1"/>
+            android:name=".plugin.stub.PluginContentProvider$P1"/>
         <provider
             android:authorities="${applicationId}.plugin_stub_2"
             android:exported="false"
-            android:name=".client.hook.plugin.stub.PluginContentProvider$P2"/>
+            android:name=".plugin.stub.PluginContentProvider$P2"/>
     </application>
 </manifest>

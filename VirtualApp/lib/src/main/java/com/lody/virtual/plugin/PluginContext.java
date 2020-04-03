@@ -14,16 +14,14 @@
  * the License.
  */
 
-package com.lody.virtual.client.hook.plugin;
+package com.lody.virtual.plugin;
 
 import android.app.Application;
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.res.AssetManager;
 import android.content.res.Resources;
-import android.os.Bundle;
 import android.util.AttributeSet;
 import android.view.ContextThemeWrapper;
 import android.view.InflateException;

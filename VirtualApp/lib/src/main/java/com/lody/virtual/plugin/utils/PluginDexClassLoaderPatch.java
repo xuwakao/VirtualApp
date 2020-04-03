@@ -1,4 +1,4 @@
-package com.lody.virtual.client.hook.plugin.utils;
+package com.lody.virtual.plugin.utils;
 
 /**
  * PluginDexClassLoader's Patch
