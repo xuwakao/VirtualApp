@@ -1,6 +1,7 @@
 package com.lody.virtual.plugin;
 
 import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.plugin.core.PluginCore;
 import com.lody.virtual.plugin.utils.PluginDexClassLoaderPatch;
 import com.lody.virtual.helper.utils.Reflect;
 

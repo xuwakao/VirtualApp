@@ -1,4 +1,4 @@
-package com.lody.virtual.plugin;
+package com.lody.virtual.plugin.fixer;
 
 import android.app.Activity;
 import android.content.pm.ActivityInfo;
@@ -7,6 +7,7 @@ import android.content.res.Resources;
 
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.fixer.ActivityFixer;
+import com.lody.virtual.plugin.PluginImpl;
 import com.lody.virtual.server.pm.PackageSetting;
 
 import mirror.android.content.ContextWrapper;

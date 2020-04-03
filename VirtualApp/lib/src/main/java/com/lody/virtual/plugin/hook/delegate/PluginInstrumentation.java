@@ -1,4 +1,4 @@
-package com.lody.virtual.plugin;
+package com.lody.virtual.plugin.hook.delegate;
 
 import android.app.Activity;
 import android.app.Application;
@@ -14,6 +14,10 @@ import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.hook.delegate.AppInstrumentation;
 import com.lody.virtual.client.hook.delegate.InstrumentationDelegate;
 import com.lody.virtual.client.interfaces.IInjector;
+import com.lody.virtual.plugin.hook.proxies.classloader.PluginClassLoader;
+import com.lody.virtual.plugin.core.PluginCore;
+import com.lody.virtual.plugin.fixer.PluginFixer;
+import com.lody.virtual.plugin.PluginImpl;
 import com.lody.virtual.remote.StubActivityRecord;
 
 import mirror.android.app.ActivityThread;

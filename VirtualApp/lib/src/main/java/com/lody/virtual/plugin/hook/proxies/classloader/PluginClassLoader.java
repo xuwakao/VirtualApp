@@ -1,7 +1,8 @@
-package com.lody.virtual.plugin;
+package com.lody.virtual.plugin.hook.proxies.classloader;
 
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
+import com.lody.virtual.plugin.core.PluginCore;
 
 import java.net.URL;
 import java.util.Enumeration;

@@ -5,8 +5,6 @@ import android.os.Build;
 import com.lody.virtual.client.hook.base.MethodInvocationProxy;
 import com.lody.virtual.client.hook.base.MethodInvocationStub;
 import com.lody.virtual.client.hook.delegate.AppInstrumentation;
-import com.lody.virtual.plugin.PluginCore;
-import com.lody.virtual.plugin.PluginInstrumentation;
 import com.lody.virtual.client.hook.proxies.account.AccountManagerStub;
 import com.lody.virtual.client.hook.proxies.alarm.AlarmManagerStub;
 import com.lody.virtual.client.hook.proxies.am.ActivityManagerStub;
@@ -54,6 +52,8 @@ import com.lody.virtual.client.hook.proxies.wifi.WifiManagerStub;
 import com.lody.virtual.client.hook.proxies.wifi_scanner.WifiScannerStub;
 import com.lody.virtual.client.hook.proxies.window.WindowManagerStub;
 import com.lody.virtual.client.interfaces.IInjector;
+import com.lody.virtual.plugin.hook.delegate.PluginInstrumentation;
+import com.lody.virtual.plugin.hook.proxies.classloader.PluginClassLoaderStub;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -112,7 +112,7 @@ public final class InvocationStubManager {
 
 	private void injectInternal() throws Throwable {
 		if (VirtualCore.get().isMainProcess()) {
-			addInjector(PluginCore.get());
+			addInjector(new PluginClassLoaderStub());
 			addInjector(new ActivityManagerStub());
 			return;
 		}

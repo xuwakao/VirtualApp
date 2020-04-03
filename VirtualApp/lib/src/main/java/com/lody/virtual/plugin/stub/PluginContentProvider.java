@@ -10,7 +10,7 @@ import android.os.IBinder;
 import android.os.Process;
 
 import com.lody.virtual.client.core.VirtualCore;
-import com.lody.virtual.plugin.PluginCore;
+import com.lody.virtual.plugin.core.PluginCore;
 import com.lody.virtual.plugin.PluginImpl;
 import com.lody.virtual.helper.compat.BundleCompat;
 
@@ -49,7 +49,7 @@ public class PluginContentProvider extends ContentProvider {
 		Bundle res = new Bundle();
 		BundleCompat.putBinder(res, "_VA_|_client_", mClient.asBinder());
 		res.putInt("_VA_|_pid_", Process.myPid());
-		PluginCore.get().putPlugin(vpid, this);
+		PluginCore.get().putPlugin(vpid, mClient);
 		return res;
 	}
 

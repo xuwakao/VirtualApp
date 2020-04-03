@@ -32,6 +32,7 @@ import android.view.ViewStub;
 import com.lody.virtual.client.hook.utils.FilePermissionUtils;
 import com.lody.virtual.os.VEnvironment;
 import com.lody.virtual.os.VUserHandle;
+import com.lody.virtual.plugin.core.PluginCore;
 import com.lody.virtual.remote.InstalledAppInfo;
 
 import java.io.File;

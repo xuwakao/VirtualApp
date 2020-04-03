@@ -14,6 +14,7 @@ import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.ipc.VPackageManager;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VUserHandle;
+import com.lody.virtual.plugin.hook.delegate.PluginInstrumentation;
 import com.lody.virtual.remote.InstalledAppInfo;
 
 import mirror.android.app.ActivityThread;
