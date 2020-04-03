@@ -17,10 +17,6 @@ import com.lody.virtual.client.interfaces.IInjector;
 import com.lody.virtual.remote.StubActivityRecord;
 
 import mirror.android.app.ActivityThread;
-import mirror.android.view.ContextThemeWrapper;
-import mirror.com.android.internal.policy.PhoneWindow;
-
-import static android.content.Context.LAYOUT_INFLATER_SERVICE;
 
 public class PluginInstrumentation extends InstrumentationDelegate implements IInjector {
 
@@ -100,11 +96,7 @@ public class PluginInstrumentation extends InstrumentationDelegate implements II
             return;
         }
         PluginImpl plugin = PluginCore.get().getClient(r.pluginId);
-        PluginFixer.fixActivity(activity, plugin.getApplicationInfo().theme,
-                plugin.getApplicationInfo().icon, plugin.getApplicationInfo().logo);
-        mirror.android.app.Activity.mApplication.set(activity, plugin.getApp());
-//        ContextThemeWrapper.mResources.set(activity, plugin.getPluginContext().getResources());
-        PhoneWindow.mLayoutInflater.set(activity.getWindow(), plugin.getPluginContext().getSystemService(LAYOUT_INFLATER_SERVICE));
+        PluginFixer.fixActivity(activity, plugin);
         super.callActivityOnCreate(activity, icicle);
     }
 
@@ -116,11 +108,7 @@ public class PluginInstrumentation extends InstrumentationDelegate implements II
             return;
         }
         PluginImpl plugin = PluginCore.get().getClient(r.pluginId);
-        PluginFixer.fixActivity(activity, plugin.getApplicationInfo().theme,
-                plugin.getApplicationInfo().icon, plugin.getApplicationInfo().logo);
-        mirror.android.app.Activity.mApplication.set(activity, plugin.getApp());
-//        ContextThemeWrapper.mResources.set(activity, plugin.getPluginContext().getResources());
-        PhoneWindow.mLayoutInflater.set(activity.getWindow(), plugin.getPluginContext().getSystemService(LAYOUT_INFLATER_SERVICE));
+        PluginFixer.fixActivity(activity, plugin);
         super.callActivityOnCreate(activity, icicle, persistentState);
     }
 }

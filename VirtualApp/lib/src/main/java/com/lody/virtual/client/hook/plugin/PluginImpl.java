@@ -6,6 +6,7 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.os.IBinder;
+import android.text.TextUtils;
 
 import com.lody.virtual.BuildConfig;
 import com.lody.virtual.client.core.InvocationStubManager;
@@ -64,7 +65,8 @@ public class PluginImpl extends IPluginClient.Stub {
 
     private Application makeApplication() {
         mApp = null;
-        String appClass = mApplicationInfo.className;
+        String appClass = TextUtils.isEmpty(mApplicationInfo.className) ?
+                Application.class.getName() : mApplicationInfo.className;
         PluginInstrumentation instrumentation = PluginInstrumentation.getDefault();
         try {
             mApp = instrumentation.newApplication(

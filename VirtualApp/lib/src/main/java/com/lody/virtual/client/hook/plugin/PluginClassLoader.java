@@ -37,6 +37,7 @@ public class PluginClassLoader extends PathClassLoader {
         try {
             Class<?> loadClass = null;
             if (mLoadClassPluginId >= 0) {
+//                VLog.d(TAG, "host load class : " + name);
                 loadClass = PluginCore.get().getClient(mLoadClassPluginId).loadClass(name, resolve);
             }
             if (loadClass != null) {
