@@ -34,8 +34,8 @@ public class WindowManagerStub extends BinderInvocationProxy {
                 Display.sWindowManager.set(getInvocationStub().getProxyInterface());
             }
         }
-        if (PhoneWindow.TYPE != null) {
-            PhoneWindow.sWindowManager.set(getInvocationStub().getProxyInterface());
+        if (PhoneWindow.WindowManagerHolder.TYPE != null) {
+            PhoneWindow.WindowManagerHolder.sWindowManager.set(getInvocationStub().getProxyInterface());
         }
     }
 

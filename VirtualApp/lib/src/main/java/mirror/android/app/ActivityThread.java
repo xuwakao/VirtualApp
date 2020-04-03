@@ -37,7 +37,7 @@ public class ActivityThread {
     public static RefMethod<Object> installProvider;
     public static RefObject<Object> mBoundApplication;
     public static RefObject<Handler> mH;
-    public static RefObject<Application> mInitialApplication;
+    public static RefObject<android.app.Application> mInitialApplication;
     public static RefObject<Instrumentation> mInstrumentation;
     public static RefObject<Map<String, WeakReference<?>>> mPackages;
     public static RefObject<Map> mProviderMap;

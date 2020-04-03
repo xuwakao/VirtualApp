@@ -44,7 +44,7 @@ public class PluginClassLoader extends PathClassLoader {
             }
             try {
                 loadClass = mOriginal.loadClass(name);
-                VLog.d(TAG, "Loading class : " + loadClass);
+//                VLog.d(TAG, "Loading class : " + loadClass);
                 return loadClass;
             } catch (ClassNotFoundException e) {
                 VLog.w(TAG, "class not found in original : " + e);

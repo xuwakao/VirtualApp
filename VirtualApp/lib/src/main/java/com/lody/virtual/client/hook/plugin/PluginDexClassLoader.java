@@ -1,7 +1,5 @@
 package com.lody.virtual.client.hook.plugin;
 
-import android.content.pm.PackageInfo;
-
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.hook.plugin.utils.PluginDexClassLoaderPatch;
 import com.lody.virtual.helper.utils.Reflect;
@@ -25,7 +23,7 @@ public class PluginDexClassLoader extends DexClassLoader {
     /**
      * 初始化插件的DexClassLoader的构造函数。插件化框架会调用此函数。
      *
-     * @param pluginName        the plugin's name
+     * @param pluginName         the plugin's name
      * @param dexPath            the list of jar/apk files containing classes and
      *                           resources, delimited by {@code File.pathSeparator}, which
      *                           defaults to {@code ":"} on Android
@@ -60,11 +58,10 @@ public class PluginDexClassLoader extends DexClassLoader {
 
     @Override
     protected Class<?> loadClass(String className, boolean resolve) throws ClassNotFoundException {
-        // 插件自己的Class。从自己开始一直到BootClassLoader，采用正常的双亲委派模型流程，读到了就直接返回
-        VLog.d(TAG, "load call : " + className);
         Class<?> pc = null;
         ClassNotFoundException cnfException = null;
         try {
+//            VLog.d(TAG, "plugin load class : " + className);
             pc = super.loadClass(className, resolve);
             if (pc != null) {
                 return pc;

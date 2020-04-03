@@ -71,8 +71,15 @@ public class PluginImpl extends IPluginClient.Stub {
                     mPluginDexClassLoader, appClass, mPluginContext);
             instrumentation.callApplicationOnCreate(mApp);
             mLoadedApk = mirror.android.app.Application.mLoadedApk.get(mApp);
-        } catch (Exception e) {
+        } catch (ClassNotFoundException e) {
             VLog.e(TAG, "makeApplication error " + e);
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            VLog.e(TAG, "makeApplication error " + e);
+            e.printStackTrace();
+        } catch (InstantiationException e) {
+            VLog.e(TAG, "makeApplication error " + e);
+            e.printStackTrace();
         }
         return mApp;
     }

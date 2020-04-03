@@ -33,6 +33,7 @@ import android.view.ViewStub;
 
 import com.lody.virtual.client.hook.utils.FilePermissionUtils;
 import com.lody.virtual.os.VEnvironment;
+import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.InstalledAppInfo;
 
 import java.io.File;
@@ -82,7 +83,7 @@ public class PluginContext extends ContextThemeWrapper {
         mNewClassLoader = cl;
         mNewResources = r;
         mPlugin = plugin;
-        mUserId = userId;
+        mUserId = VUserHandle.getUserId(userId);
         mInstallAppInfo = installedAppInfo;
         mContextInjector = null;
     }
@@ -403,9 +404,13 @@ public class PluginContext extends ContextThemeWrapper {
         return mInstallAppInfo.packageName;
     }
 
+    /**
+     * {@link #mApplication} is NULL when Plugin {@link Application#getApplicationContext()} in {@link Application#onCreate()}
+     * @return
+     */
     @Override
     public Context getApplicationContext() {
-        return mApplication;
+        return mApplication == null ? this : mApplication;
     }
 
 
