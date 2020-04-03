@@ -67,7 +67,7 @@ public class PluginInstrumentation extends InstrumentationDelegate implements II
             return super.newActivity(clazz, context, token, application, intent, info, title, parent, id, lastNonConfigurationInstance);
         }
 
-        PluginImpl plugin = PluginCore.get().getClient(r.pluginId);
+        PluginImpl plugin = PluginCore.get().getPlugin(r.pluginId);
         clazz = plugin.loadClass(r.info.name, true);
         Activity activity = super.newActivity(clazz, context, token, application, intent, info, title, parent, id, lastNonConfigurationInstance);
         mirror.android.app.Activity.mApplication.set(activity, plugin.getApp());
@@ -87,7 +87,7 @@ public class PluginInstrumentation extends InstrumentationDelegate implements II
         }
         Activity activity = super.newActivity(cl, className, intent);
 
-        PluginImpl plugin = PluginCore.get().getClient(r.pluginId);
+        PluginImpl plugin = PluginCore.get().getPlugin(r.pluginId);
         mirror.android.app.Activity.mApplication.set(activity, plugin.getApp());
         return activity;
     }
@@ -99,7 +99,7 @@ public class PluginInstrumentation extends InstrumentationDelegate implements II
             super.callActivityOnCreate(activity, icicle);
             return;
         }
-        PluginImpl plugin = PluginCore.get().getClient(r.pluginId);
+        PluginImpl plugin = PluginCore.get().getPlugin(r.pluginId);
         PluginFixer.fixActivity(activity, plugin);
         super.callActivityOnCreate(activity, icicle);
     }
@@ -111,7 +111,7 @@ public class PluginInstrumentation extends InstrumentationDelegate implements II
             super.callActivityOnCreate(activity, icicle);
             return;
         }
-        PluginImpl plugin = PluginCore.get().getClient(r.pluginId);
+        PluginImpl plugin = PluginCore.get().getPlugin(r.pluginId);
         PluginFixer.fixActivity(activity, plugin);
         super.callActivityOnCreate(activity, icicle, persistentState);
     }

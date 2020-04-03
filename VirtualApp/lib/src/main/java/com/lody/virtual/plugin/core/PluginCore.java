@@ -10,7 +10,7 @@ import java.util.HashSet;
 public class PluginCore {
 
     private boolean useHostClassIfNotFound;
-    public SparseArray<PluginImpl> mPluginCp = new SparseArray<>();
+    public SparseArray<PluginImpl> mPlugins = new SparseArray<>();
 
     private static class Singleton {
         static final PluginCore singleton = new PluginCore();
@@ -22,8 +22,8 @@ public class PluginCore {
     }
 
     public void putPlugin(int vpid, PluginImpl client) {
-        synchronized (mPluginCp) {
-            mPluginCp.put(vpid, client);
+        synchronized (mPlugins) {
+            mPlugins.put(vpid, client);
         }
     }
 
@@ -33,10 +33,14 @@ public class PluginCore {
      * @param vpid plugin id
      * @return
      */
-    public PluginImpl getClient(int vpid) {
-        synchronized (mPluginCp) {
-            return mPluginCp.get(vpid);
+    public PluginImpl getPlugin(int vpid) {
+        synchronized (mPlugins) {
+            return mPlugins.get(vpid);
         }
+    }
+
+    public static Class<?> loadClass(int vpid, String name, boolean resolve) {
+        return get().getPlugin(vpid).loadClass(name, resolve);
     }
 
     public boolean isUseHostClassIfNotFound() {
