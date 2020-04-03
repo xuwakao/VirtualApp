@@ -26,6 +26,10 @@ import mirror.android.app.ActivityThread;
 public class PluginInstrumentation extends InstrumentationDelegate implements IInjector {
 
     private static PluginInstrumentation gDefault;
+    /**
+     * Don't inject twice
+     */
+    private static boolean sInject = false;
 
     private PluginInstrumentation(Instrumentation base) {
         super(base);
@@ -52,8 +56,11 @@ public class PluginInstrumentation extends InstrumentationDelegate implements II
 
     @Override
     public void inject() throws Throwable {
-        base = ActivityThread.mInstrumentation.get(VirtualCore.mainThread());
-        ActivityThread.mInstrumentation.set(VirtualCore.mainThread(), this);
+        if (!sInject) {
+            base = ActivityThread.mInstrumentation.get(VirtualCore.mainThread());
+            ActivityThread.mInstrumentation.set(VirtualCore.mainThread(), this);
+            sInject = true;
+        }
     }
 
     @Override
