@@ -32,6 +32,7 @@ public class PluginHCallbackStub implements Handler.Callback, IInjector {
     private static final int CREATE_SERVICE;
     private static int EXECUTE_TRANSACTION = 159;
     private static int LAUNCH_ACTIVITY = 100;
+    private static int DESTROY_ACTIVITY = 109;
     private static final int SCHEDULE_CRASH;
     private static final String TAG;
     private static final PluginHCallbackStub sCallback;
@@ -95,6 +96,10 @@ public class PluginHCallbackStub implements Handler.Callback, IInjector {
                     if (!handleLaunchActivity(msg)) {
                         return true;
                     }
+                } else if (DESTROY_ACTIVITY == msg.what) {
+                    if (!handleDestroyActivity(msg)) {
+                        return true;
+                    }
                 } else if (EXECUTE_TRANSACTION == msg.what) {
                     if (!handleExecuteTransaction(msg)) {
                         return true;
@@ -116,6 +121,12 @@ public class PluginHCallbackStub implements Handler.Callback, IInjector {
             }
         }
         return false;
+    }
+
+    private boolean handleDestroyActivity(Message msg) {
+        IBinder token = (IBinder) msg.obj;
+        VActivityManager.get().onActivityDestroy(token);
+        return true;
     }
 
     private boolean handleExecuteTransaction(Message msg) {
