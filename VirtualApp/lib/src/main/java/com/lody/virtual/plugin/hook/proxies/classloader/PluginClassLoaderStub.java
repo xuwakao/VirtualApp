@@ -4,22 +4,21 @@ import android.content.Context;
 
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.interfaces.IInjector;
+import com.lody.virtual.plugin.core.PluginCore;
 
 import mirror.android.app.ContextImpl;
 import mirror.android.app.LoadedApk;
 
 public class PluginClassLoaderStub implements IInjector {
-
-    private PluginClassLoader mPluginClassLoader;
-
     @Override
     public void inject() throws Throwable {
         Context context = VirtualCore.get().getContext();
         Object packageInfo = ContextImpl.mPackageInfo.get(context);
         ClassLoader classLoader = LoadedApk.mClassLoader.get(packageInfo);
-        mPluginClassLoader = new PluginClassLoader(classLoader.getParent(), classLoader);
-        LoadedApk.mClassLoader.set(packageInfo, mPluginClassLoader);
-        Thread.currentThread().setContextClassLoader(mPluginClassLoader);
+        PluginClassLoader pluginClassLoader = new PluginClassLoader(classLoader.getParent(), classLoader);
+        LoadedApk.mClassLoader.set(packageInfo, pluginClassLoader);
+        Thread.currentThread().setContextClassLoader(pluginClassLoader);
+        PluginCore.get().setClassLoader(pluginClassLoader);
     }
 
     @Override
@@ -27,6 +26,6 @@ public class PluginClassLoaderStub implements IInjector {
         Context context = VirtualCore.get().getContext();
         Object packageInfo = ContextImpl.mPackageInfo.get(context);
         ClassLoader classLoader = LoadedApk.mClassLoader.get(packageInfo);
-        return mPluginClassLoader != classLoader;
+        return PluginCore.get().getClassLoader() != classLoader;
     }
 }

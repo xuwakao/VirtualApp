@@ -43,6 +43,7 @@ import com.lody.virtual.helper.utils.ComponentUtils;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.plugin.IPluginClient;
+import com.lody.virtual.plugin.fixer.PluginMetaBundle;
 import com.lody.virtual.remote.AppTaskInfo;
 import com.lody.virtual.remote.BadgerInfo;
 import com.lody.virtual.remote.PendingIntentData;
@@ -328,12 +329,15 @@ public class VActivityManagerService implements IActivityManager {
             r.activeSince = SystemClock.elapsedRealtime();
             r.process = targetApp;
             r.serviceInfo = serviceInfo;
+            PluginMetaBundle.putPluginIdToMeta(r.serviceInfo, targetApp.vpid);
             try {
                 IApplicationThreadCompat.scheduleCreateService(appThread, r, r.serviceInfo, 0);
             } catch (RemoteException e) {
                 e.printStackTrace();
             }
             addRecord(r);
+        } else {
+            PluginMetaBundle.putPluginIdToMeta(r.serviceInfo, targetApp.vpid);
         }
         r.lastActivityTime = SystemClock.uptimeMillis();
         if (scheduleServiceArgs) {
@@ -1075,7 +1079,7 @@ public class VActivityManagerService implements IActivityManager {
     }
 
     public ProcessRecord findProcessLocked(int pid, int pluginId) {
-        if(pluginId >= 0) {
+        if (pluginId >= 0) {
             return mPluginPidsSelfLocked.get(pluginId);
         }
         return mPidsSelfLocked.get(pid);

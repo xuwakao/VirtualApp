@@ -2,6 +2,7 @@ package com.lody.virtual.plugin.core;
 
 import com.lody.virtual.helper.collection.SparseArray;
 import com.lody.virtual.plugin.PluginImpl;
+import com.lody.virtual.plugin.hook.proxies.classloader.PluginClassLoader;
 
 import java.lang.reflect.Constructor;
 import java.util.HashMap;
@@ -11,6 +12,7 @@ public class PluginCore {
 
     private boolean useHostClassIfNotFound;
     private SparseArray<PluginImpl> mPlugins = new SparseArray<>();
+    private PluginClassLoader mPluginClassLoader;
 
     private static class Singleton {
         static final PluginCore singleton = new PluginCore();
@@ -75,5 +77,13 @@ public class PluginCore {
 
     public void addCacheConstructor(String name, Constructor<?> constructor) {
         mConstructors.put(name, constructor);
+    }
+
+    public void setClassLoader(PluginClassLoader classLoader) {
+        mPluginClassLoader = classLoader;
+    }
+
+    public PluginClassLoader getClassLoader() {
+        return mPluginClassLoader;
     }
 }

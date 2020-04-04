@@ -19,7 +19,7 @@ import static android.content.Context.LAYOUT_INFLATER_SERVICE;
 
 
 public class PluginFixer {
-    public static void fixApplicationInfo(PackageSetting setting, ActivityInfo info, int userId) {
+    public static void fixApplicationInfo(PackageSetting setting, android.content.pm.ComponentInfo info, int userId) {
         if (setting.isPlugin(userId)) {
             info.applicationInfo = VirtualCore.get().getContext().getApplicationInfo();
         }

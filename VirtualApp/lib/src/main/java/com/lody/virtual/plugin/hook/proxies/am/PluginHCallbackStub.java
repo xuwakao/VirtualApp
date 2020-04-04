@@ -3,6 +3,7 @@ package com.lody.virtual.plugin.hook.proxies.am;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.content.pm.ServiceInfo;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
@@ -15,6 +16,7 @@ import com.lody.virtual.helper.utils.ComponentUtils;
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.plugin.core.PluginCore;
+import com.lody.virtual.plugin.fixer.PluginMetaBundle;
 import com.lody.virtual.remote.StubActivityRecord;
 
 import java.util.Iterator;
@@ -54,6 +56,7 @@ public class PluginHCallbackStub implements Handler.Callback, IInjector {
         }
 
         CREATE_SERVICE = ActivityThread.H.CREATE_SERVICE.get();
+        DESTROY_ACTIVITY = ActivityThread.H.DESTROY_ACTIVITY.get();
         int crash;
         if (ActivityThread.H.SCHEDULE_CRASH != null) {
             crash = ActivityThread.H.SCHEDULE_CRASH.get();
@@ -105,6 +108,9 @@ public class PluginHCallbackStub implements Handler.Callback, IInjector {
                         return true;
                     }
                 } else if (CREATE_SERVICE == msg.what) {
+                    if (!handleCreateService(msg)) {
+                        return true;
+                    }
                 } else if (SCHEDULE_CRASH == msg.what) {
                     // to avoid the exception send from System.
                     return true;
@@ -121,6 +127,15 @@ public class PluginHCallbackStub implements Handler.Callback, IInjector {
             }
         }
         return false;
+    }
+
+    private boolean handleCreateService(Message msg) {
+        Object data = msg.obj;
+        ServiceInfo serviceInfo = ActivityThread.CreateServiceData.info.get(data);
+        VLog.d(TAG, serviceInfo.applicationInfo.packageName + " replace host pkg");
+        int pluginId = PluginMetaBundle.getPluginIdFromMeta(serviceInfo);
+        PluginCore.get().getClassLoader().setLoadClassPluginId(pluginId);
+        return true;
     }
 
     private boolean handleDestroyActivity(Message msg) {

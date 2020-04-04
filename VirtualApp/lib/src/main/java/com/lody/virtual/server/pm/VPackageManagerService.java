@@ -328,6 +328,7 @@ public class VPackageManagerService implements IPackageManager {
                 if (a != null) {
                     ActivityInfo receiverInfo = PackageParserEx.generateActivityInfo(a, flags, ps.readUserState(userId), userId);
                     ComponentFixer.fixComponentInfo(ps, receiverInfo, userId);
+                    PluginFixer.fixApplicationInfo(ps, receiverInfo, userId);
                     return receiverInfo;
                 }
             }
@@ -347,6 +348,7 @@ public class VPackageManagerService implements IPackageManager {
                 if (s != null) {
                     ServiceInfo serviceInfo = PackageParserEx.generateServiceInfo(s, flags, ps.readUserState(userId), userId);
                     ComponentFixer.fixComponentInfo(ps, serviceInfo, userId);
+                    PluginFixer.fixApplicationInfo(ps, serviceInfo, userId);
                     return serviceInfo;
                 }
             }
@@ -366,6 +368,7 @@ public class VPackageManagerService implements IPackageManager {
                 if (provider != null) {
                     ProviderInfo providerInfo = PackageParserEx.generateProviderInfo(provider, flags, ps.readUserState(userId), userId);
                     ComponentFixer.fixComponentInfo(ps, providerInfo, userId);
+                    PluginFixer.fixApplicationInfo(ps, providerInfo, userId);
                     return providerInfo;
                 }
             }
@@ -704,6 +707,7 @@ public class VPackageManagerService implements IPackageManager {
                     VPackage p = mPackages.get(providerInfo.packageName);
                     PackageSetting settings = (PackageSetting) p.mExtras;
                     ComponentFixer.fixComponentInfo(settings, providerInfo, userId);
+                    PluginFixer.fixApplicationInfo(ps, providerInfo, userId);
                     return providerInfo;
                 }
             }
