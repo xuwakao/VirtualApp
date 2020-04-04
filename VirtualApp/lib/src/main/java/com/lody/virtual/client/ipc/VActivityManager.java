@@ -334,6 +334,14 @@ public class VActivityManager {
         }
     }
 
+    public void appDoneExecuting(int pluginId) {
+        try {
+            getService().appDoneExecuting(pluginId);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+    }
+
     public List<String> getProcessPkgList(int pid) {
         try {
             return getService().getProcessPkgList(pid);

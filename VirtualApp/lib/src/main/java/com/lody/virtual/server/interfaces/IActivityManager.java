@@ -44,6 +44,8 @@ public interface IActivityManager {
 
     void appDoneExecuting() throws RemoteException;
 
+    void appDoneExecuting(int pluginId) throws RemoteException;
+
     int startActivities(Intent[] intents, String[] resolvedTypes, IBinder token, Bundle options, int userId) throws RemoteException;
 
     int startActivity(Intent intent, ActivityInfo info, IBinder resultTo, Bundle options, String resultWho, int requestCode, int userId) throws RemoteException;

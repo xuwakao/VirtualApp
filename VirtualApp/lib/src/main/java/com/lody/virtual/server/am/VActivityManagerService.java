@@ -1068,6 +1068,16 @@ public class VActivityManagerService implements IActivityManager {
         }
     }
 
+    @Override
+    public void appDoneExecuting(int pluginId) {
+        synchronized (mPluginPidsSelfLocked) {
+            ProcessRecord r = mPluginPidsSelfLocked.get(pluginId);
+            if (r != null) {
+                r.doneExecuting = true;
+                r.lock.open();
+            }
+        }
+    }
 
     /**
      * Should guard by {@link VActivityManagerService#mPidsSelfLocked}

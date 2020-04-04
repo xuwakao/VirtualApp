@@ -29,6 +29,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewStub;
 
+import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.hook.utils.FilePermissionUtils;
 import com.lody.virtual.os.VEnvironment;
 import com.lody.virtual.os.VUserHandle;
@@ -53,7 +54,8 @@ public class PluginContext extends ContextThemeWrapper {
     private final String mPlugin;
 
     private final Object mSync = new Object();
-    private final InstalledAppInfo mInstallAppInfo;
+    private final InstalledAppInfo mInstalledAppInfo;
+    private final ApplicationInfo mApplicationInfo;
     private final int mUserId;
 
     private File mFilesDir;
@@ -74,14 +76,15 @@ public class PluginContext extends ContextThemeWrapper {
     private Application mApplication;
 
     public PluginContext(Context base, int themeResId, ClassLoader cl, Resources r,
-                         String plugin, int userId, InstalledAppInfo installedAppInfo) {
+                         String plugin, int userId, ApplicationInfo applicationInfo) {
         super(base, themeResId);
 
         mNewClassLoader = cl;
         mNewResources = r;
         mPlugin = plugin;
         mUserId = VUserHandle.getUserId(userId);
-        mInstallAppInfo = installedAppInfo;
+        mApplicationInfo = applicationInfo;
+        mInstalledAppInfo = VirtualCore.get().getInstalledAppInfo(applicationInfo.packageName, 0);
     }
 
     public void setApplication(Application application) {
@@ -332,7 +335,7 @@ public class PluginContext extends ContextThemeWrapper {
             setFilePermissionsFromMode(file.getPath(), 0, FilePermissionUtils.S_IRWXU | FilePermissionUtils.S_IRWXG | FilePermissionUtils.S_IXOTH);
         }*/
 
-        return VEnvironment.getDataUserPackageDirectory(mUserId, mInstallAppInfo.packageName);
+        return VEnvironment.getDataUserPackageDirectory(mUserId, mApplicationInfo.packageName);
     }
 
     private final View handleCreateView(String name, Context context, AttributeSet attrs) {
@@ -397,11 +400,12 @@ public class PluginContext extends ContextThemeWrapper {
 
     @Override
     public String getPackageName() {
-        return mInstallAppInfo.packageName;
+        return mApplicationInfo.packageName;
     }
 
     /**
      * {@link #mApplication} is NULL when Plugin {@link Application#getApplicationContext()} in {@link Application#onCreate()}
+     *
      * @return
      */
     @Override
@@ -502,11 +506,11 @@ public class PluginContext extends ContextThemeWrapper {
     @Override
     public String getPackageCodePath() {
         // 获取插件Apk的路径
-        return mInstallAppInfo.apkPath;
+        return mInstalledAppInfo.apkPath;
     }
 
     @Override
     public ApplicationInfo getApplicationInfo() {
-        return mInstallAppInfo.getApplicationInfo(mInstallAppInfo.getInstalledUsers()[0]);
+        return mApplicationInfo;
     }
 }
