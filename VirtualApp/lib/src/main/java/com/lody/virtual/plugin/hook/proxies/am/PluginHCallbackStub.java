@@ -3,6 +3,7 @@ package com.lody.virtual.plugin.hook.proxies.am;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.ServiceInfo;
 import android.os.Build;
 import android.os.Handler;
@@ -133,6 +134,7 @@ public class PluginHCallbackStub implements Handler.Callback, IInjector {
         Object data = msg.obj;
         ServiceInfo serviceInfo = ActivityThread.CreateServiceData.info.get(data);
         VLog.d(TAG, serviceInfo.applicationInfo.packageName + " replace host pkg");
+        serviceInfo.applicationInfo = new ApplicationInfo(VirtualCore.get().getContext().getApplicationInfo());
         int pluginId = PluginMetaBundle.getPluginIdFromMeta(serviceInfo);
         PluginCore.get().getClassLoader().setLoadClassPluginId(pluginId);
         return true;
