@@ -16,6 +16,7 @@ import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.helper.utils.ComponentUtils;
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
+import com.lody.virtual.plugin.PluginImpl;
 import com.lody.virtual.plugin.core.PluginCore;
 import com.lody.virtual.plugin.fixer.PluginMetaBundle;
 import com.lody.virtual.remote.StubActivityRecord;
@@ -133,9 +134,21 @@ public class PluginHCallbackStub implements Handler.Callback, IInjector {
     private boolean handleCreateService(Message msg) {
         Object data = msg.obj;
         ServiceInfo serviceInfo = ActivityThread.CreateServiceData.info.get(data);
-        VLog.d(TAG, serviceInfo.applicationInfo.packageName + " replace host pkg");
-        serviceInfo.applicationInfo = new ApplicationInfo(VirtualCore.get().getContext().getApplicationInfo());
         int pluginId = PluginMetaBundle.getPluginIdFromMeta(serviceInfo);
+
+        PluginImpl plugin = PluginCore.get().getPlugin(pluginId);
+        if (plugin == null) {
+            VLog.e(TAG, "handleCreateService plugin not launched : " + serviceInfo);
+            return true;
+        }
+
+        if (!plugin.isBound()) {
+            plugin.bindPluginApp(serviceInfo.packageName, serviceInfo.processName);
+            getH().sendMessageAtFrontOfQueue(Message.obtain(msg));
+            return false;
+        }
+
+        serviceInfo.applicationInfo = new ApplicationInfo(VirtualCore.get().getContext().getApplicationInfo());
         PluginCore.get().getClassLoader().setLoadClassPluginId(pluginId);
         return true;
     }
@@ -186,8 +199,15 @@ public class PluginHCallbackStub implements Handler.Callback, IInjector {
                             IBinder token = Reflect.on(r).call("getActivityToken").get();
                             ActivityInfo info = saveInstance.info;
 
-                            if (PluginCore.get().getPlugin(saveInstance.pluginId) == null) {
-                                VLog.e(TAG, "plugin not launched : " + saveInstance);
+                            PluginImpl plugin = PluginCore.get().getPlugin(saveInstance.pluginId);
+                            if (plugin == null) {
+                                VLog.e(TAG, "handleLaunchActivity2 plugin not launched : " + saveInstance);
+                                return true;
+                            }
+
+                            if (!plugin.isBound()) {
+                                plugin.bindPluginApp(info.packageName, info.processName);
+                                getH().sendMessageAtFrontOfQueue(Message.obtain(msg));
                                 return false;
                             }
 
@@ -221,10 +241,18 @@ public class PluginHCallbackStub implements Handler.Callback, IInjector {
         IBinder token = ActivityThread.ActivityClientRecord.token.get(r);
         ActivityInfo info = saveInstance.info;
 
-        if (PluginCore.get().getPlugin(saveInstance.pluginId) == null) {
-            VLog.e(TAG, "plugin not launched : " + saveInstance);
+        PluginImpl plugin = PluginCore.get().getPlugin(saveInstance.pluginId);
+        if (plugin == null) {
+            VLog.e(TAG, "handleLaunchActivity plugin not launched : " + saveInstance);
+            return true;
+        }
+
+        if (!plugin.isBound()) {
+            plugin.bindPluginApp(info.packageName, info.processName);
+            getH().sendMessageAtFrontOfQueue(Message.obtain(msg));
             return false;
         }
+
         int taskId = IActivityManager.getTaskForActivity.call(
                 ActivityManagerNative.getDefault.call(),
                 token,
