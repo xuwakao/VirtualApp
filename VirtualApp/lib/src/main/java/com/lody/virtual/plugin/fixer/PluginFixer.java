@@ -1,14 +1,11 @@
 package com.lody.virtual.plugin.fixer;
 
 import android.app.Activity;
-import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 import android.content.res.Resources;
 
-import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.fixer.ActivityFixer;
 import com.lody.virtual.plugin.PluginImpl;
-import com.lody.virtual.server.pm.PackageSetting;
 
 import mirror.android.content.ContextWrapper;
 import mirror.android.content.pm.ComponentInfo;
@@ -19,6 +16,12 @@ import static android.content.Context.LAYOUT_INFLATER_SERVICE;
 
 
 public class PluginFixer {
+
+    public static void fixComponentApplicationInfo(android.content.pm.ComponentInfo componentInfo, ApplicationInfo oldAppInfo) {
+        ApplicationInfo newAppInfo = new ApplicationInfo(oldAppInfo);
+        componentInfo.applicationInfo = newAppInfo;
+    }
+
     /**
      * Set theme before activity create and fix crash android.content.res.Resources$NotFoundException
      * when {@link Activity#initWindowDecorActionBar} set window default icon and logo.
@@ -36,17 +39,15 @@ public class PluginFixer {
         if (icon > 0) {
             mirror.android.app.Activity.mActivityInfo.get(activity).icon = icon;
         } else if (info.icon > 0) {
-            ApplicationInfo applicationInfo = new ApplicationInfo(info);
-            applicationInfo.icon = 0;
-            ComponentInfo.applicationInfo.set(mirror.android.app.Activity.mActivityInfo.get(activity), applicationInfo);
+            fixComponentApplicationInfo(mirror.android.app.Activity.mActivityInfo.get(activity), info);
+            mirror.android.app.Activity.mActivityInfo.get(activity).applicationInfo.icon = 0;
         }
 
         if (logo > 0) {
             mirror.android.app.Activity.mActivityInfo.get(activity).logo = logo;
         } else if (info.logo > 0) {
-            ApplicationInfo applicationInfo = new ApplicationInfo(info);
-            applicationInfo.logo = 0;
-            ComponentInfo.applicationInfo.set(mirror.android.app.Activity.mActivityInfo.get(activity), applicationInfo);
+            fixComponentApplicationInfo(mirror.android.app.Activity.mActivityInfo.get(activity), info);
+            mirror.android.app.Activity.mActivityInfo.get(activity).applicationInfo.logo = 0;
         }
 
         mirror.android.app.Activity.mApplication.set(activity, plugin.getApp());

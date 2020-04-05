@@ -11,7 +11,6 @@ import android.os.IBinder;
 import android.os.PersistableBundle;
 
 import com.lody.virtual.client.core.VirtualCore;
-import com.lody.virtual.client.hook.delegate.AppInstrumentation;
 import com.lody.virtual.client.hook.delegate.InstrumentationDelegate;
 import com.lody.virtual.client.interfaces.IInjector;
 import com.lody.virtual.client.ipc.VActivityManager;
@@ -65,7 +64,7 @@ public class PluginInstrumentation extends InstrumentationDelegate implements II
 
     @Override
     public boolean isEnvBad() {
-        return !(ActivityThread.mInstrumentation.get(VirtualCore.mainThread()) instanceof AppInstrumentation);
+        return !(ActivityThread.mInstrumentation.get(VirtualCore.mainThread()) instanceof PluginInstrumentation);
     }
 
     @Override

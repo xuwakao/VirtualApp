@@ -11,6 +11,7 @@ import android.os.Binder;
 import android.os.Build;
 import android.os.ConditionVariable;
 import android.os.IBinder;
+import android.os.IInterface;
 import android.os.Looper;
 import android.text.TextUtils;
 
@@ -19,22 +20,29 @@ import com.lody.virtual.client.core.InvocationStubManager;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.SpecialComponentList;
 import com.lody.virtual.client.env.VirtualRuntime;
-import com.lody.virtual.client.hook.delegate.AppInstrumentation;
+import com.lody.virtual.client.hook.providers.ProviderHook;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.ipc.VPackageManager;
+import com.lody.virtual.client.stub.VASettings;
+import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VEnvironment;
 import com.lody.virtual.plugin.hook.delegate.PluginInstrumentation;
+import com.lody.virtual.plugin.hook.proxies.PluginInjectors;
 import com.lody.virtual.plugin.hook.proxies.am.PluginHCallbackStub;
 import com.lody.virtual.remote.InstalledAppInfo;
 
 import java.util.List;
+import java.util.Map;
 
 import mirror.android.app.ActivityThread;
 import mirror.android.app.ContextImplKitkat;
+import mirror.android.app.IActivityManager;
 import mirror.android.app.LoadedApkICS;
 import mirror.android.app.LoadedApkKitkat;
+import mirror.android.content.ContentProviderHolderOreo;
 import mirror.android.content.res.CompatibilityInfo;
+import mirror.android.providers.Settings;
 import mirror.android.view.CompatibilityInfoHolder;
 import mirror.android.view.DisplayAdjustments;
 
@@ -133,6 +141,7 @@ public class PluginImpl extends IPluginClient.Stub {
         if (data.providers != null) {
             installContentProviders(mInitialApplication, data.providers);
         }
+        fixInstalledProviders();
 
         if (lock != null) {
             lock.open();
@@ -140,12 +149,13 @@ public class PluginImpl extends IPluginClient.Stub {
         }
 
         try {
+            PluginInjectors.get().inject();
             PluginInstrumentation.getDefault().callApplicationOnCreate(mInitialApplication);
             InvocationStubManager.getInstance().checkEnv(PluginHCallbackStub.class);
             if (conflict) {
-                InvocationStubManager.getInstance().checkEnv(AppInstrumentation.class);
+                InvocationStubManager.getInstance().checkEnv(PluginInstrumentation.class);
             }
-        } catch (Exception e) {
+        } catch (Throwable e) {
             if (!PluginInstrumentation.getDefault().onException(mInitialApplication, e)) {
                 VLog.e(TAG, "Unable to create plugin application " + mInitialApplication.getClass().getName()
                         + ": " + e.toString(), e);
@@ -186,6 +196,75 @@ public class PluginImpl extends IPluginClient.Stub {
             }
         } finally {
             Binder.restoreCallingIdentity(origId);
+        }
+    }
+
+    private void fixInstalledProviders() {
+        clearSettingProvider();
+        Map clientMap = ActivityThread.mProviderMap.get(VirtualCore.mainThread());
+        for (Object clientRecord : clientMap.values()) {
+            if (BuildCompat.isOreo()) {
+                IInterface provider = ActivityThread.ProviderClientRecordJB.mProvider.get(clientRecord);
+                Object holder = ActivityThread.ProviderClientRecordJB.mHolder.get(clientRecord);
+                if (holder == null) {
+                    continue;
+                }
+                ProviderInfo info = ContentProviderHolderOreo.info.get(holder);
+                if (!info.authority.startsWith(VASettings.STUB_PLUGIN_AUTHORITY)) {
+                    provider = ProviderHook.createProxy(true, info.authority, provider);
+                    ActivityThread.ProviderClientRecordJB.mProvider.set(clientRecord, provider);
+                    ContentProviderHolderOreo.provider.set(holder, provider);
+                }
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+                IInterface provider = ActivityThread.ProviderClientRecordJB.mProvider.get(clientRecord);
+                Object holder = ActivityThread.ProviderClientRecordJB.mHolder.get(clientRecord);
+                if (holder == null) {
+                    continue;
+                }
+                ProviderInfo info = IActivityManager.ContentProviderHolder.info.get(holder);
+                if (!info.authority.startsWith(VASettings.STUB_PLUGIN_AUTHORITY)) {
+                    provider = ProviderHook.createProxy(true, info.authority, provider);
+                    ActivityThread.ProviderClientRecordJB.mProvider.set(clientRecord, provider);
+                    IActivityManager.ContentProviderHolder.provider.set(holder, provider);
+                }
+            } else {
+                String authority = ActivityThread.ProviderClientRecord.mName.get(clientRecord);
+                IInterface provider = ActivityThread.ProviderClientRecord.mProvider.get(clientRecord);
+                if (provider != null && !authority.startsWith(VASettings.STUB_PLUGIN_AUTHORITY)) {
+                    provider = ProviderHook.createProxy(true, authority, provider);
+                    ActivityThread.ProviderClientRecord.mProvider.set(clientRecord, provider);
+                }
+            }
+        }
+
+    }
+
+    private void clearSettingProvider() {
+        Object cache;
+        cache = Settings.System.sNameValueCache.get();
+        if (cache != null) {
+            clearContentProvider(cache);
+        }
+        cache = Settings.Secure.sNameValueCache.get();
+        if (cache != null) {
+            clearContentProvider(cache);
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && Settings.Global.TYPE != null) {
+            cache = Settings.Global.sNameValueCache.get();
+            if (cache != null) {
+                clearContentProvider(cache);
+            }
+        }
+    }
+
+    private void clearContentProvider(Object cache) {
+        if (BuildCompat.isOreo()) {
+            Object holder = Settings.NameValueCacheOreo.mProviderHolder.get(cache);
+            if (holder != null) {
+                Settings.ContentProviderHolder.mContentProvider.set(holder, null);
+            }
+        } else {
+            Settings.NameValueCache.mContentProvider.set(cache, null);
         }
     }
 

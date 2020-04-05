@@ -1,15 +1,11 @@
 package com.lody.virtual.plugin.hook.proxies.am;
 
-import android.annotation.TargetApi;
 import android.app.ActivityManager;
-import android.app.Application;
 import android.app.IServiceConnection;
 import android.app.Notification;
 import android.app.Service;
 import android.content.ComponentName;
-import android.content.IIntentReceiver;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ComponentInfo;
 import android.content.pm.PackageManager;
@@ -36,7 +32,6 @@ import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.Constants;
 import com.lody.virtual.client.env.SpecialComponentList;
 import com.lody.virtual.client.hook.base.MethodProxy;
-import com.lody.virtual.client.hook.delegate.TaskDescriptionDelegate;
 import com.lody.virtual.client.hook.providers.ProviderHook;
 import com.lody.virtual.client.hook.secondary.ServiceConnectionDelegate;
 import com.lody.virtual.client.hook.utils.MethodParameterUtils;
@@ -54,7 +49,6 @@ import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.utils.ArrayUtils;
 import com.lody.virtual.helper.utils.BitmapUtils;
 import com.lody.virtual.helper.utils.ComponentUtils;
-import com.lody.virtual.helper.utils.DrawableUtils;
 import com.lody.virtual.helper.utils.FileUtils;
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
@@ -68,18 +62,15 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.util.List;
-import java.util.WeakHashMap;
 
 import mirror.android.app.IActivityManager;
-import mirror.android.app.LoadedApk;
 import mirror.android.content.ContentProviderHolderOreo;
-import mirror.android.content.IIntentReceiverJB;
 import mirror.android.content.pm.UserInfo;
 
 import static com.lody.virtual.client.stub.VASettings.INTERCEPT_BACK_HOME;
+import static com.lody.virtual.plugin.fixer.PluginFixer.fixComponentApplicationInfo;
 
 /**
  * @author Lody
@@ -98,7 +89,7 @@ class MethodProxies {
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
             String pkg = (String) args[0];
-            int userId = VUserHandle.myUserId();
+            int userId = VUserHandle.myPluginUserId();
             VActivityManager.get().killAppByPkg(pkg, userId);
             return 0;
         }
@@ -108,26 +99,6 @@ class MethodProxies {
             return isAppProcess();
         }
     }
-
-
-    static class CrashApplication extends MethodProxy {
-
-        @Override
-        public String getMethodName() {
-            return "crashApplication";
-        }
-
-        @Override
-        public Object call(Object who, Method method, Object... args) throws Throwable {
-            return method.invoke(who, args);
-        }
-
-        @Override
-        public boolean isEnable() {
-            return isAppProcess();
-        }
-    }
-
 
     static class AddPackageDependency extends MethodProxy {
 
@@ -140,11 +111,6 @@ class MethodProxies {
         public Object call(Object who, Method method, Object... args) throws Throwable {
             MethodParameterUtils.replaceFirstAppPkg(args);
             return method.invoke(who, args);
-        }
-
-        @Override
-        public boolean isEnable() {
-            return isAppProcess();
         }
     }
 
@@ -195,11 +161,6 @@ class MethodProxies {
         public int getProviderNameIndex() {
             return 0;
         }
-
-        @Override
-        public boolean isEnable() {
-            return isAppProcess();
-        }
     }
 
     static class StartVoiceActivity extends StartActivity {
@@ -244,7 +205,11 @@ class MethodProxies {
             MethodParameterUtils.replaceLastAppPkg(args);
             Intent service = (Intent) args[0];
             String resolvedType = (String) args[1];
-            return VActivityManager.get().peekService(service, resolvedType);
+            IBinder result = VActivityManager.get().peekService(service, resolvedType);
+            if (result == null) {
+                return method.invoke(who, args);
+            }
+            return result;
         }
 
         @Override
@@ -383,7 +348,7 @@ class MethodProxies {
             Intent intent = (Intent) args[intentIndex];
             intent.setDataAndType(intent.getData(), resolvedType);
             IBinder resultTo = resultToIndex >= 0 ? (IBinder) args[resultToIndex] : null;
-            int userId = VUserHandle.myUserId();
+            int userId = VUserHandle.myPluginUserId();
 
             if (ComponentUtils.isStubComponent(intent)) {
                 return method.invoke(who, args);
@@ -623,7 +588,11 @@ class MethodProxies {
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
             IBinder token = (IBinder) args[0];
-            return VActivityManager.get().getCallingPackage(token);
+            String callingPackage = VActivityManager.get().getCallingPackage(token);
+            if (callingPackage.equals("android")) {
+                return method.invoke(who, args);
+            }
+            return callingPackage;
         }
 
         @Override
@@ -650,11 +619,6 @@ class MethodProxies {
             }
             return super.call(who, method, args);
         }
-
-        @Override
-        public boolean isEnable() {
-            return isAppProcess();
-        }
     }
 
 
@@ -669,11 +633,6 @@ class MethodProxies {
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
             return method.invoke(who, args);
-        }
-
-        @Override
-        public boolean isEnable() {
-            return isAppProcess();
         }
     }
 
@@ -708,11 +667,6 @@ class MethodProxies {
         public Object call(Object who, Method method, Object... args) throws Throwable {
             MethodParameterUtils.replaceFirstAppPkg(args);
             return method.invoke(who, args);
-        }
-
-        @Override
-        public boolean isEnable() {
-            return isAppProcess();
         }
     }
 
@@ -778,12 +732,6 @@ class MethodProxies {
             MethodParameterUtils.replaceFirstAppPkg(args);
             return method.invoke(who, args);
         }
-
-        @Override
-        public boolean isEnable() {
-            return isAppProcess();
-        }
-
     }
 
 
@@ -815,15 +763,13 @@ class MethodProxies {
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
             IBinder token = (IBinder) args[0];
+            if (!VActivityManager.get().isVAServiceToken(token)) {
+                return method.invoke(who, args);
+            }
             Intent service = (Intent) args[1];
             boolean doRebind = (boolean) args[2];
             VActivityManager.get().unbindFinished(token, service, doRebind);
             return 0;
-        }
-
-        @Override
-        public boolean isEnable() {
-            return isAppProcess();
         }
     }
 
@@ -835,7 +781,6 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-
             return super.call(who, method, args);
         }
     }
@@ -856,13 +801,7 @@ class MethodProxies {
             String resolvedType = (String) args[3];
             IServiceConnection conn = (IServiceConnection) args[4];
             int flags = (int) args[5];
-            int userId = VUserHandle.myUserId();
-            if (isServerProcess()) {
-                userId = service.getIntExtra("_VA_|_user_id_", VUserHandle.USER_NULL);
-            }
-            if (userId == VUserHandle.USER_NULL) {
-                return method.invoke(who, args);
-            }
+            int userId = VUserHandle.myPluginUserId();
             ServiceInfo serviceInfo = VirtualCore.get().resolveServiceInfo(service, userId);
             if (serviceInfo != null) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -894,7 +833,7 @@ class MethodProxies {
                 // for server process
                 return method.invoke(who, args);
             }
-            int userId = VUserHandle.myUserId();
+            int userId = VUserHandle.myPluginUserId();
             if (service.getBooleanExtra("_VA_|_from_inner_", false)) {
                 userId = service.getIntExtra("_VA_|_user_id_", userId);
                 service = service.getParcelableExtra("_VA_|_intent_");
@@ -985,18 +924,12 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1) {
                 if (args.length > 0 && args[0] instanceof String) {
                     args[0] = getHostPkg();
                 }
             }
             return method.invoke(who, args);
-        }
-
-        @Override
-        public boolean isEnable() {
-            return isAppProcess();
         }
     }
 
@@ -1011,12 +944,10 @@ class MethodProxies {
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
             IBinder token = (IBinder) args[0];
-            return VActivityManager.get().getCallingActivity(token);
-        }
-
-        @Override
-        public boolean isEnable() {
-            return isAppProcess();
+            ComponentName callingActivity = VActivityManager.get().getCallingActivity(token);
+            if (callingActivity != null)
+                return callingActivity;
+            return method.invoke(who, args);
         }
     }
 
@@ -1038,32 +969,6 @@ class MethodProxies {
             return null;
         }
     }
-
-
-    static class KillApplicationProcess extends MethodProxy {
-
-        @Override
-        public String getMethodName() {
-            return "killApplicationProcess";
-        }
-
-        @Override
-        public Object call(Object who, Method method, Object... args) throws Throwable {
-            if (args.length > 1 && args[0] instanceof String && args[1] instanceof Integer) {
-                String processName = (String) args[0];
-                int uid = (int) args[1];
-                VActivityManager.get().killApplicationProcess(processName, uid);
-                return 0;
-            }
-            return method.invoke(who, args);
-        }
-
-        @Override
-        public boolean isEnable() {
-            return isAppProcess();
-        }
-    }
-
 
     static class StartActivityAsUser extends StartActivity {
 
@@ -1161,11 +1066,6 @@ class MethodProxies {
             }
             return runningTaskInfos;
         }
-
-        @Override
-        public boolean isEnable() {
-            return isAppProcess();
-        }
     }
 
 
@@ -1180,11 +1080,6 @@ class MethodProxies {
         public Object call(Object who, Method method, Object... args) throws Throwable {
             MethodParameterUtils.replaceFirstAppPkg(args);
             return method.invoke(who, args);
-        }
-
-        @Override
-        public boolean isEnable() {
-            return isAppProcess();
         }
     }
 
@@ -1278,7 +1173,7 @@ class MethodProxies {
 //                    return VClientImpl.get().getVUid() == uid;
 //                }
 //                int userId = intent.getIntExtra("_VA_|_user_id_", -1);
-//                return userId == -1 || userId == VUserHandle.myUserId();
+//                return userId == -1 || userId == VUserHandle.myPluginUserId();
 //            }
 //
 //            @SuppressWarnings("unused")
@@ -1321,6 +1216,7 @@ class MethodProxies {
 
 
     static class GetContentProvider extends MethodProxy {
+        private static final String TAG = "GetContentProvider";
 
         @Override
         public String getMethodName() {
@@ -1331,14 +1227,15 @@ class MethodProxies {
         public Object call(Object who, Method method, Object... args) throws Throwable {
             int nameIdx = getProviderNameIndex();
             String name = (String) args[nameIdx];
-            int userId = VUserHandle.myUserId();
+            int userId = VUserHandle.myPluginUserId();
             ProviderInfo info = VPackageManager.get().resolveContentProvider(name, 0, userId);
+            fixComponentApplicationInfo(info, VirtualCore.get().getContext().getApplicationInfo());
             if (info != null && info.enabled && isAppPkg(info.packageName)) {
                 int targetVPid = VActivityManager.get().initProcess(info.packageName, info.processName, userId);
                 if (targetVPid == -1) {
                     return null;
                 }
-                args[nameIdx] = VASettings.getStubAuthority(targetVPid);
+                args[nameIdx] = VASettings.getPluginAuthority(targetVPid);
                 Object holder = method.invoke(who, args);
                 if (holder == null) {
                     return null;
@@ -1385,11 +1282,6 @@ class MethodProxies {
 
         public int getProviderNameIndex() {
             return 1;
-        }
-
-        @Override
-        public boolean isEnable() {
-            return isAppProcess();
         }
     }
 
@@ -1629,11 +1521,6 @@ class MethodProxies {
         public Object call(Object who, Method method, Object... args) throws Throwable {
             MethodParameterUtils.replaceFirstAppPkg(args);
             return method.invoke(who, args);
-        }
-
-        @Override
-        public boolean isEnable() {
-            return isAppProcess();
         }
     }
 

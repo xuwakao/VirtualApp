@@ -1326,5 +1326,25 @@
             android:authorities="${applicationId}.plugin_stub_2"
             android:exported="false"
             android:name=".plugin.stub.PluginContentProvider$P2"/>
+
+        <provider
+            android:authorities="${applicationId}.virtual_stub_declared_0"
+            android:exported="false"
+            android:name=".plugin.stub.PluginReceiveProvider$P0"/>
+
+        <provider
+            android:authorities="${applicationId}.virtual_stub_declared_1"
+            android:exported="false"
+            android:name=".plugin.stub.PluginReceiveProvider$P1"/>
+
+        <provider
+            android:authorities="${applicationId}.virtual_stub_declared_2"
+            android:exported="false"
+            android:name=".plugin.stub.PluginReceiveProvider$P2"/>
+
+        <provider
+            android:authorities="${applicationId}.virtual_stub_declared_3"
+            android:exported="false"
+            android:name=".plugin.stub.PluginReceiveProvider$P3"/>
     </application>
 </manifest>

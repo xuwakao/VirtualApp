@@ -17,12 +17,13 @@ public class VASettings {
     public static String STUB_JOB = StubJob.class.getName();
     public static String RESOLVER_ACTIVITY = ResolverActivity.class.getName();
     public static String STUB_CP_AUTHORITY = "virtual_stub_";
+    public static String STUB_DECLARED_CP_AUTHORITY = "virtual_stub_declared_";
 
     public static String STUB_PLUGIN_ACTIVITY = PluginStubActivity.class.getName();
     public static String STUB_PLUGIN_AUTHORITY = "plugin_stub_";
 
     public static int STUB_COUNT = 50;
-    public static int STUB_PLUGIN_COUNT = 50;
+    public static int STUB_DECLARED_CP_COUNT = 4;
     public static String[] PRIVILEGE_APPS = new String[]{
             "com.google.android.gms"
     };
@@ -69,6 +70,10 @@ public class VASettings {
 
     public static String getPluginAuthority(int index) {
         return String.format(Locale.ENGLISH, "%s%d", STUB_PLUGIN_AUTHORITY, index);
+    }
+
+    public static String getDeclaredCpAuthority(int index) {
+        return String.format(Locale.ENGLISH, "%s%d", STUB_DECLARED_CP_AUTHORITY, index);
     }
 
     public static String getPluginStubActivityName(int index) {

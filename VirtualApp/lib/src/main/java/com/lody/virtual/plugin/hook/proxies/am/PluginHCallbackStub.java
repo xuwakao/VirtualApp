@@ -3,7 +3,6 @@ package com.lody.virtual.plugin.hook.proxies.am;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
-import android.content.pm.ApplicationInfo;
 import android.content.pm.ServiceInfo;
 import android.os.Build;
 import android.os.Handler;
@@ -27,6 +26,8 @@ import java.util.List;
 import mirror.android.app.ActivityManagerNative;
 import mirror.android.app.ActivityThread;
 import mirror.android.app.IActivityManager;
+
+import static com.lody.virtual.plugin.fixer.PluginFixer.fixComponentApplicationInfo;
 
 /**
  * @author Lody
@@ -148,7 +149,7 @@ public class PluginHCallbackStub implements Handler.Callback, IInjector {
             return false;
         }
 
-        serviceInfo.applicationInfo = new ApplicationInfo(VirtualCore.get().getContext().getApplicationInfo());
+        fixComponentApplicationInfo(serviceInfo, VirtualCore.get().getContext().getApplicationInfo());
         PluginCore.get().getClassLoader().setLoadClassPluginId(pluginId);
         return true;
     }
