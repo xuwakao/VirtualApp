@@ -4,8 +4,6 @@ import android.net.Uri;
 
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.hook.base.MethodProxy;
-import com.lody.virtual.client.stub.VASettings;
-import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.client.stub.StubContentResolver;
 
 import java.lang.reflect.Method;
@@ -34,12 +32,16 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            Object uri = args[0];
+            Uri uri = (Uri) args[0];
+            if (VirtualCore.get().isInstalledProviders(uri.getAuthority())) {
+//                VLog.d(TAG, "notifyChange installed providers");
+                return method.invoke(who, args);
+            }
             Object observer = args[1];
             Object userHandle = args[3];
             Object targetSdkVersion = args[4];
 //            VLog.d(TAG, "notifyChange [ " + uri + ", " + observer + ", " + userHandle + ", " + targetSdkVersion + " ]");
-            StubContentResolver contentObserver = VirtualCore.get().getContentObserver((Uri) uri);
+            StubContentResolver contentObserver = VirtualCore.get().getContentObserver(uri);
             if (contentObserver != null) {
 //                VLog.d(TAG, "notify change has cache : " + contentObserver);
                 args[0] = contentObserver.getRegisterAuth();
@@ -63,8 +65,8 @@ class MethodProxies {
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
             Uri uri = (Uri) args[0];
-//            VLog.d(TAG, "RegisterContentObserver " + uri);
-            if (uri.getAuthority().indexOf(VASettings.STUB_DECLARED_CP_AUTHORITY) >= 0) {
+            if (VirtualCore.get().isInstalledProviders(uri.getAuthority())) {
+//                VLog.d(TAG, "registerContentObserver installed providers");
                 return method.invoke(who, args);
             }
             boolean notifyForDescendants = (boolean) args[1];
@@ -72,8 +74,8 @@ class MethodProxies {
             Object userHandle = args[3];
             Object targetSdkVersion = args[4];
             Uri changed = VirtualCore.get().registerContentObserver(uri, notifyForDescendants, observer);
+//            VLog.d(TAG, "registerContentObserver [ " + changed + ", " + uri + ", " + observer + ", " + userHandle + ", " + targetSdkVersion + " ]");
             if (changed != null) {
-//                VLog.d(TAG, "registerContentObserver [ " + changed + ", " + uri + ", " + observer + ", " + userHandle + ", " + targetSdkVersion + " ]");
                 args[0] = changed;
             }
             return method.invoke(who, args);

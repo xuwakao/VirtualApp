@@ -72,7 +72,6 @@ public class ActivityThread {
         public static RefObject<IInterface> mProvider;
     }
 
-
     public static class ProviderClientRecordJB {
         public static Class<?> TYPE = RefClass.load(ProviderClientRecordJB.class, "android.app.ActivityThread$ProviderClientRecord");
         public static RefObject<Object> mHolder;
@@ -83,6 +82,7 @@ public class ActivityThread {
         public static Class<?> TYPE = RefClass.load(ProviderKeyJBMR1.class, "android.app.ActivityThread$ProviderKey");
         @MethodParams({String.class, int.class})
         public static RefConstructor<?> ctor;
+        public static RefObject<String> authority;
     }
 
     public static class AppBindData {

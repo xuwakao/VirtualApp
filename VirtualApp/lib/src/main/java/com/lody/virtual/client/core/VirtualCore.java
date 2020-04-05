@@ -33,6 +33,7 @@ import com.lody.virtual.client.hook.delegate.TaskDescriptionDelegate;
 import com.lody.virtual.client.ipc.ServiceManagerNative;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.ipc.VPackageManager;
+import com.lody.virtual.client.stub.StubContentResolver;
 import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.collection.ArrayMap;
 import com.lody.virtual.helper.compat.BundleCompat;
@@ -42,7 +43,6 @@ import com.lody.virtual.helper.ipcbus.IServerCache;
 import com.lody.virtual.helper.utils.BitmapUtils;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VUserHandle;
-import com.lody.virtual.client.stub.StubContentResolver;
 import com.lody.virtual.remote.InstallResult;
 import com.lody.virtual.remote.InstalledAppInfo;
 import com.lody.virtual.server.ServiceCache;
@@ -52,9 +52,11 @@ import com.lody.virtual.server.interfaces.IPackageObserver;
 import com.lody.virtual.server.interfaces.IUiCallback;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import dalvik.system.DexFile;
 import mirror.android.app.ActivityThread;
@@ -523,6 +525,30 @@ public final class VirtualCore {
         return true;
     }
 
+    private Set<String> mInstallProviders = new HashSet<>();
+    private boolean isFetchedCp = false;
+
+    public void fetchInstallProviders() {
+        if (isFetchedCp)
+            return;
+        Map<Object, Object> providers = ActivityThread.mProviderMap.get(mainThread());
+        Iterator<Map.Entry<Object, Object>> iterator = providers.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<Object, Object> next = iterator.next();
+            String auth = ActivityThread.ProviderKeyJBMR1.authority.get(next.getKey());
+            VLog.d(TAG, auth + " is a installed provider");
+            mInstallProviders.add(auth);
+        }
+        isFetchedCp = true;
+    }
+
+    public boolean isInstalledProviders(String auth) {
+        return mInstallProviders.contains(auth) ||
+                auth.indexOf(VASettings.STUB_CP_AUTHORITY) >= 0 ||
+                auth.indexOf(VASettings.STUB_DECLARED_CP_AUTHORITY) >= 0 ||
+                auth.equals("settings");
+    }
+
     private void registerDeclaredStubContentObserver() {
         if (isServerProcess())
             return;
@@ -530,7 +556,7 @@ public final class VirtualCore {
         while (id < STUB_DECLARED_CP_COUNT) {
             String resolverAuthority = getDeclaredCpAuthority(id);
             Uri auth = Uri.parse("content://" + resolverAuthority);
-            VLog.d(TAG, "register stub content observer " + auth);
+//            VLog.d(TAG, "register stub content observer " + auth);
             StubContentResolver stubContentResolver = new StubContentResolver(auth);
             VirtualCore.get().getContext().getContentResolver().registerContentObserver(auth, true, stubContentResolver);
             mDeclaredCpResolver.put(auth, stubContentResolver);
@@ -540,9 +566,14 @@ public final class VirtualCore {
 
     public Uri registerContentObserver(Uri uri, boolean notifyForDescendants, Object observer) {
         StubContentResolver resolver = queryFreeCpResolver();
-        resolver.setResolverData(uri, notifyForDescendants, observer);
+        if (resolver != null) {
 //        VLog.d(TAG, "register observer : " + resolver.getRegisterAuth() + ", " + resolver.getResolverAuth());
-        return resolver.getRegisterAuth();
+            resolver.setResolverData(uri, notifyForDescendants, observer);
+            return resolver.getRegisterAuth();
+        } else {
+            //when registerDeclaredStubContentObserver, no free observer
+            return null;
+        }
     }
 
     public StubContentResolver getContentObserver(Uri uri) {
