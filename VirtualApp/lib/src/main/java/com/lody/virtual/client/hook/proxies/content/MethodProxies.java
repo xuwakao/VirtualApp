@@ -38,10 +38,10 @@ class MethodProxies {
             Object observer = args[1];
             Object userHandle = args[3];
             Object targetSdkVersion = args[4];
-            VLog.d(TAG, "notifyChange [ " + uri + ", " + observer + ", " + userHandle + ", " + targetSdkVersion + " ]");
+//            VLog.d(TAG, "notifyChange [ " + uri + ", " + observer + ", " + userHandle + ", " + targetSdkVersion + " ]");
             StubContentResolver contentObserver = VirtualCore.get().getContentObserver((Uri) uri);
             if (contentObserver != null) {
-                VLog.d(TAG, "notify change has cache : " + contentObserver);
+//                VLog.d(TAG, "notify change has cache : " + contentObserver);
                 args[0] = contentObserver.getRegisterAuth();
                 args[1] = contentObserver.getTransport();
             }
@@ -63,7 +63,7 @@ class MethodProxies {
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
             Uri uri = (Uri) args[0];
-            VLog.d(TAG, "RegisterContentObserver " + uri);
+//            VLog.d(TAG, "RegisterContentObserver " + uri);
             if (uri.getAuthority().indexOf(VASettings.STUB_DECLARED_CP_AUTHORITY) >= 0) {
                 return method.invoke(who, args);
             }
@@ -73,7 +73,7 @@ class MethodProxies {
             Object targetSdkVersion = args[4];
             Uri changed = VirtualCore.get().registerContentObserver(uri, notifyForDescendants, observer);
             if (changed != null) {
-                VLog.d(TAG, "registerContentObserver [ " + changed + ", " + uri + ", " + observer + ", " + userHandle + ", " + targetSdkVersion + " ]");
+//                VLog.d(TAG, "registerContentObserver [ " + changed + ", " + uri + ", " + observer + ", " + userHandle + ", " + targetSdkVersion + " ]");
                 args[0] = changed;
             }
             return method.invoke(who, args);
@@ -96,7 +96,7 @@ class MethodProxies {
             Object observer = args[0];
             boolean remove = VirtualCore.get().unregisterContentObserver(observer);
             if (remove) {
-                VLog.d(TAG, "unregisterContentObserver remove");
+//                VLog.d(TAG, "unregisterContentObserver remove");
             }
             return method.invoke(who, args);
         }

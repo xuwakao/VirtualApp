@@ -541,7 +541,7 @@ public final class VirtualCore {
     public Uri registerContentObserver(Uri uri, boolean notifyForDescendants, Object observer) {
         StubContentResolver resolver = queryFreeCpResolver();
         resolver.setResolverData(uri, notifyForDescendants, observer);
-        VLog.d(TAG, "register observer : " + resolver.getRegisterAuth() + ", " + resolver.getResolverAuth());
+//        VLog.d(TAG, "register observer : " + resolver.getRegisterAuth() + ", " + resolver.getResolverAuth());
         return resolver.getRegisterAuth();
     }
 
@@ -549,7 +549,7 @@ public final class VirtualCore {
         for (Uri key : mDeclaredCpResolver.keySet()) {
             StubContentResolver resolver = mDeclaredCpResolver.get(key);
             if (uri.equals(resolver.getResolverAuth())) {
-                VLog.d(TAG, "get cache observer : " + resolver.getRegisterAuth() + ", " + resolver.getResolverAuth());
+//                VLog.d(TAG, "get cache observer : " + resolver.getRegisterAuth() + ", " + resolver.getResolverAuth());
                 return resolver;
             }
         }
@@ -561,7 +561,7 @@ public final class VirtualCore {
         while (iterator.hasNext()) {
             Map.Entry<Uri, StubContentResolver> next = iterator.next();
             if (next.getValue().getTransport() == observer) {
-                VLog.d(TAG, "unregister observer : " + next.getValue().getRegisterAuth() + ", " + next.getValue().getResolverAuth());
+//                VLog.d(TAG, "unregister observer : " + next.getValue().getRegisterAuth() + ", " + next.getValue().getResolverAuth());
                 next.getValue().release();
                 return true;
             }
