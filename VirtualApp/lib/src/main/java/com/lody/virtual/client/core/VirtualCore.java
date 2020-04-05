@@ -250,9 +250,11 @@ public final class VirtualCore {
         switch (processType) {
             case Main:
                 initializer.onMainProcess();
+                fetchInstallProviders();
                 break;
             case VAppClient:
                 initializer.onVirtualProcess();
+                fetchInstallProviders();
                 break;
             case Server:
                 initializer.onServerProcess();
@@ -536,7 +538,7 @@ public final class VirtualCore {
         while (iterator.hasNext()) {
             Map.Entry<Object, Object> next = iterator.next();
             String auth = ActivityThread.ProviderKeyJBMR1.authority.get(next.getKey());
-            VLog.d(TAG, auth + " is a installed provider");
+//            VLog.d(TAG, auth + " is a installed provider");
             mInstallProviders.add(auth);
         }
         isFetchedCp = true;
