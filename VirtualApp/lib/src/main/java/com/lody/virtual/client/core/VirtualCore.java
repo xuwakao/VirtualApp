@@ -14,6 +14,7 @@ import android.content.pm.ServiceInfo;
 import android.content.res.AssetManager;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.ConditionVariable;
 import android.os.IBinder;
@@ -33,31 +34,40 @@ import com.lody.virtual.client.ipc.ServiceManagerNative;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.ipc.VPackageManager;
 import com.lody.virtual.client.stub.VASettings;
+import com.lody.virtual.helper.collection.ArrayMap;
 import com.lody.virtual.helper.compat.BundleCompat;
 import com.lody.virtual.helper.ipcbus.IPCBus;
 import com.lody.virtual.helper.ipcbus.IPCSingleton;
 import com.lody.virtual.helper.ipcbus.IServerCache;
 import com.lody.virtual.helper.utils.BitmapUtils;
+import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VUserHandle;
+import com.lody.virtual.client.stub.StubContentResolver;
 import com.lody.virtual.remote.InstallResult;
 import com.lody.virtual.remote.InstalledAppInfo;
-import com.lody.virtual.server.interfaces.IAppManager;
 import com.lody.virtual.server.ServiceCache;
+import com.lody.virtual.server.interfaces.IAppManager;
 import com.lody.virtual.server.interfaces.IAppRequestListener;
 import com.lody.virtual.server.interfaces.IPackageObserver;
 import com.lody.virtual.server.interfaces.IUiCallback;
 
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import dalvik.system.DexFile;
 import mirror.android.app.ActivityThread;
+
+import static com.lody.virtual.client.stub.VASettings.STUB_DECLARED_CP_COUNT;
+import static com.lody.virtual.client.stub.VASettings.getDeclaredCpAuthority;
 
 /**
  * @author Lody
  * @version 3.5
  */
 public final class VirtualCore {
+    private static final String TAG = "VirtualCore";
 
     public static final int GET_HIDDEN_APP = 0x00000001;
 
@@ -94,6 +104,7 @@ public final class VirtualCore {
     private PhoneInfoDelegate phoneInfoDelegate;
     private ComponentDelegate componentDelegate;
     private TaskDescriptionDelegate taskDescriptionDelegate;
+    private ArrayMap<Uri, StubContentResolver> mDeclaredCpResolver = new ArrayMap<>();
 
     private VirtualCore() {
     }
@@ -202,6 +213,7 @@ public final class VirtualCore {
             invocationStubManager.init();
             invocationStubManager.injectAll();
             ContextFixer.fixContext(context);
+            registerDeclaredStubContentObserver();
             isStartUp = true;
             if (initLock != null) {
                 initLock.open();
@@ -509,6 +521,63 @@ public final class VirtualCore {
         addIntent.setAction("com.android.launcher.action.UNINSTALL_SHORTCUT");
         context.sendBroadcast(addIntent);
         return true;
+    }
+
+    private void registerDeclaredStubContentObserver() {
+        if (isServerProcess())
+            return;
+        int id = 0;
+        while (id < STUB_DECLARED_CP_COUNT) {
+            String resolverAuthority = getDeclaredCpAuthority(id);
+            Uri auth = Uri.parse("content://" + resolverAuthority);
+            VLog.d(TAG, "register stub content observer " + auth);
+            StubContentResolver stubContentResolver = new StubContentResolver(auth);
+            VirtualCore.get().getContext().getContentResolver().registerContentObserver(auth, true, stubContentResolver);
+            mDeclaredCpResolver.put(auth, stubContentResolver);
+            id++;
+        }
+    }
+
+    public Uri registerContentObserver(Uri uri, boolean notifyForDescendants, Object observer) {
+        StubContentResolver resolver = queryFreeCpResolver();
+        resolver.setResolverData(uri, notifyForDescendants, observer);
+        VLog.d(TAG, "register observer : " + resolver.getRegisterAuth() + ", " + resolver.getResolverAuth());
+        return resolver.getRegisterAuth();
+    }
+
+    public StubContentResolver getContentObserver(Uri uri) {
+        for (Uri key : mDeclaredCpResolver.keySet()) {
+            StubContentResolver resolver = mDeclaredCpResolver.get(key);
+            if (uri.equals(resolver.getResolverAuth())) {
+                VLog.d(TAG, "get cache observer : " + resolver.getRegisterAuth() + ", " + resolver.getResolverAuth());
+                return resolver;
+            }
+        }
+        return null;
+    }
+
+    public boolean unregisterContentObserver(Object observer) {
+        Iterator<Map.Entry<Uri, StubContentResolver>> iterator = mDeclaredCpResolver.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<Uri, StubContentResolver> next = iterator.next();
+            if (next.getValue().getTransport() == observer) {
+                VLog.d(TAG, "unregister observer : " + next.getValue().getRegisterAuth() + ", " + next.getValue().getResolverAuth());
+                next.getValue().release();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private StubContentResolver queryFreeCpResolver() {
+        Iterator<Map.Entry<Uri, StubContentResolver>> iterator = mDeclaredCpResolver.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<Uri, StubContentResolver> next = iterator.next();
+            if (next.getValue().isFree()) {
+                return next.getValue();
+            }
+        }
+        return null;
     }
 
     public abstract static class UiCallback extends IUiCallback.Stub {

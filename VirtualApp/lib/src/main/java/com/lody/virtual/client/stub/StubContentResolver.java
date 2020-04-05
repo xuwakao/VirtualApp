@@ -1,4 +1,4 @@
-package com.lody.virtual.plugin.stub;
+package com.lody.virtual.client.stub;
 
 import android.annotation.TargetApi;
 import android.database.ContentObserver;
@@ -9,13 +9,13 @@ import android.os.Looper;
 
 import com.lody.virtual.helper.utils.VLog;
 
-public class PluginContentResolver extends ContentObserver {
+public class StubContentResolver extends ContentObserver {
     private static final String TAG = "PluginContentResolver";
     private final Uri mAuth;
 
     private ResolverData mResolverData;
 
-    public PluginContentResolver(Uri auth) {
+    public StubContentResolver(Uri auth) {
         super(new Handler(Looper.getMainLooper()));
         mAuth = auth;
     }
@@ -52,21 +52,42 @@ public class PluginContentResolver extends ContentObserver {
 
     @Override
     public void onChange(boolean selfChange) {
-        getContentObserver().onChange(selfChange);
-        VLog.d(TAG, "content observer receive changed : " + selfChange);
+        if (mResolverData != null) {
+            VLog.d(TAG, "content observer receive changed : " + selfChange);
+            getContentObserver().onChange(selfChange);
+        } else {
+            VLog.w(TAG, "[1]content resolver receive change but not set data");
+        }
 
     }
 
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
     @Override
     public void onChange(boolean selfChange, Uri uri) {
-        getContentObserver().onChange(selfChange, uri);
-        VLog.d(TAG, "content observer receive changed : " + selfChange + ", " + uri);
+        if (mResolverData != null) {
+            VLog.d(TAG, "content observer receive changed : " + selfChange + ", " + uri);
+            getContentObserver().onChange(selfChange, uri);
+        } else {
+            VLog.w(TAG, "[2]content resolver receive change but not set data");
+        }
     }
 
     @Override
     public boolean deliverSelfNotifications() {
-        return getContentObserver().deliverSelfNotifications();
+        if (mResolverData != null) {
+            VLog.d(TAG, "content observer deliverSelfNotifications but not set data");
+            return getContentObserver().deliverSelfNotifications();
+        } else {
+            return super.deliverSelfNotifications();
+        }
+    }
+
+    public boolean isFree() {
+        return mResolverData == null;
+    }
+
+    public void release() {
+        mResolverData = null;
     }
 
     public static class ResolverData {

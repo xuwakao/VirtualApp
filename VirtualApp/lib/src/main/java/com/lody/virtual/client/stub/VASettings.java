@@ -23,7 +23,7 @@ public class VASettings {
     public static String STUB_PLUGIN_AUTHORITY = "plugin_stub_";
 
     public static int STUB_COUNT = 50;
-    public static int STUB_DECLARED_CP_COUNT = 4;
+    public static int STUB_DECLARED_CP_COUNT = 15;
     public static String[] PRIVILEGE_APPS = new String[]{
             "com.google.android.gms"
     };

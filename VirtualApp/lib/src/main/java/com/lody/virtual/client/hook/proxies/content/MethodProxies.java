@@ -2,11 +2,11 @@ package com.lody.virtual.client.hook.proxies.content;
 
 import android.net.Uri;
 
+import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.hook.base.MethodProxy;
 import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.utils.VLog;
-import com.lody.virtual.plugin.core.PluginCore;
-import com.lody.virtual.plugin.stub.PluginContentResolver;
+import com.lody.virtual.client.stub.StubContentResolver;
 
 import java.lang.reflect.Method;
 
@@ -39,7 +39,7 @@ class MethodProxies {
             Object userHandle = args[3];
             Object targetSdkVersion = args[4];
             VLog.d(TAG, "notifyChange [ " + uri + ", " + observer + ", " + userHandle + ", " + targetSdkVersion + " ]");
-            PluginContentResolver contentObserver = PluginCore.get().getContentObserver((Uri) uri);
+            StubContentResolver contentObserver = VirtualCore.get().getContentObserver((Uri) uri);
             if (contentObserver != null) {
                 VLog.d(TAG, "notify change has cache : " + contentObserver);
                 args[0] = contentObserver.getRegisterAuth();
@@ -71,10 +71,32 @@ class MethodProxies {
             Object observer = args[2];
             Object userHandle = args[3];
             Object targetSdkVersion = args[4];
-            Uri changed = PluginCore.get().registerContentObserver(uri, notifyForDescendants, observer);
+            Uri changed = VirtualCore.get().registerContentObserver(uri, notifyForDescendants, observer);
             if (changed != null) {
                 VLog.d(TAG, "registerContentObserver [ " + changed + ", " + uri + ", " + observer + ", " + userHandle + ", " + targetSdkVersion + " ]");
                 args[0] = changed;
+            }
+            return method.invoke(who, args);
+        }
+    }
+
+    /**
+     * public void registerContentObserver(Uri uri, boolean notifyForDescendants,
+     * IContentObserver observer, int userHandle, int targetSdkVersion)
+     */
+    static class UnregisterContentObserver extends MethodProxy {
+
+        @Override
+        public String getMethodName() {
+            return "unregisterContentObserver";
+        }
+
+        @Override
+        public Object call(Object who, Method method, Object... args) throws Throwable {
+            Object observer = args[0];
+            boolean remove = VirtualCore.get().unregisterContentObserver(observer);
+            if (remove) {
+                VLog.d(TAG, "unregisterContentObserver remove");
             }
             return method.invoke(who, args);
         }
