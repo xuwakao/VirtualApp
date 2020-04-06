@@ -5,6 +5,8 @@ import android.os.Build;
 import com.lody.virtual.client.core.InvocationStubManager;
 import com.lody.virtual.client.hook.proxies.job.JobServiceStub;
 import com.lody.virtual.client.hook.proxies.notification.NotificationManagerStub;
+import com.lody.virtual.client.hook.proxies.pm.PackageManagerStub;
+import com.lody.virtual.client.hook.proxies.window.WindowManagerStub;
 import com.lody.virtual.client.interfaces.IInjector;
 import com.lody.virtual.plugin.hook.proxies.am.PluginActivityManagerStub;
 import com.lody.virtual.plugin.hook.proxies.classloader.PluginClassLoaderStub;
@@ -12,6 +14,8 @@ import com.lody.virtual.plugin.hook.proxies.classloader.PluginClassLoaderStub;
 import java.util.HashMap;
 import java.util.Map;
 
+import static android.os.Build.VERSION_CODES.JELLY_BEAN_MR2;
+import static android.os.Build.VERSION_CODES.KITKAT;
 import static android.os.Build.VERSION_CODES.LOLLIPOP;
 
 public class PluginInjectors implements IInjector {
@@ -29,6 +33,19 @@ public class PluginInjectors implements IInjector {
         addInjector(new PluginClassLoaderStub());
         addInjector(new PluginActivityManagerStub());
         addInjector(new NotificationManagerStub());
+        addInjector(new PackageManagerStub());
+        addInjector(new WindowManagerStub());
+        if (Build.VERSION.SDK_INT >= JELLY_BEAN_MR2) {
+//            addInjector(new VibratorStub());
+//            addInjector(new WifiManagerStub());
+//            addInjector(new BluetoothStub());
+//            addInjector(new ContextHubServiceStub());
+        }
+        if (Build.VERSION.SDK_INT >= KITKAT) {
+//            addInjector(new AlarmManagerStub());
+//            addInjector(new AppOpsManagerStub());
+//            addInjector(new MediaRouterServiceStub());
+        }
         if (Build.VERSION.SDK_INT >= LOLLIPOP) {
             addInjector(new JobServiceStub());
         }

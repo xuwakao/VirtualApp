@@ -25,6 +25,7 @@ import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.ipc.VPackageManager;
 import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.compat.BuildCompat;
+import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VEnvironment;
 import com.lody.virtual.plugin.hook.delegate.PluginInstrumentation;
@@ -32,12 +33,14 @@ import com.lody.virtual.plugin.hook.proxies.PluginInjectors;
 import com.lody.virtual.plugin.hook.proxies.am.PluginHCallbackStub;
 import com.lody.virtual.remote.InstalledAppInfo;
 
+import java.lang.ref.WeakReference;
 import java.util.List;
 import java.util.Map;
 
 import mirror.android.app.ActivityThread;
 import mirror.android.app.ContextImplKitkat;
 import mirror.android.app.IActivityManager;
+import mirror.android.app.LoadedApk;
 import mirror.android.app.LoadedApkICS;
 import mirror.android.app.LoadedApkKitkat;
 import mirror.android.content.ContentProviderHolderOreo;
@@ -125,10 +128,20 @@ public class PluginImpl extends IPluginClient.Stub {
         }
         makeApplication();
         mPluginContext.setApplication(mInitialApplication);
-        data.info = mirror.android.app.Application.mLoadedApk.get(mInitialApplication);
 
         Configuration configuration = mPkgResources.getConfiguration();
         Object compatInfo = CompatibilityInfo.ctor.newInstance(data.appInfo, configuration.screenLayout, configuration.smallestScreenWidthDp, false);
+        Object pkgInfo = mirror.android.app.Application.mLoadedApk.get(mInitialApplication);
+        ApplicationInfo applicationInfo = new ApplicationInfo(data.appInfo);
+        applicationInfo.packageName = VirtualCore.get().getHostPkg();
+
+        Object loadedApk = Reflect.on(LoadedApk.Class).create(VirtualCore.mainThread(), applicationInfo, compatInfo,
+                LoadedApk.mBaseClassLoader.get(pkgInfo), LoadedApk.mSecurityViolation.get(pkgInfo),
+                LoadedApk.mIncludeCode.get(pkgInfo), LoadedApk.mRegisterPackage.get(pkgInfo)).get();
+        data.info = loadedApk;
+        LoadedApk.mApplication.set(data.info, mInitialApplication);
+        mirror.android.app.Application.mLoadedApk.set(mInitialApplication, data.info);
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
                 DisplayAdjustments.setCompatibilityInfo.call(ContextImplKitkat.mDisplayAdjustments.get(mPluginContext), compatInfo);
@@ -137,6 +150,9 @@ public class PluginImpl extends IPluginClient.Stub {
         } else {
             CompatibilityInfoHolder.set.call(LoadedApkICS.mCompatibilityInfo.get(mBoundApplication.info), compatInfo);
         }
+        Map<String, WeakReference<?>> loadedApkCache = ActivityThread.mPackages.get(VirtualCore.mainThread());
+        loadedApkCache.put(packageName, new WeakReference<Object>(data.info));
+        LoadedApk.mClassLoader.set(data.info, mPluginDexClassLoader);
 
         /**
          * install content providers into ActivityThread cache

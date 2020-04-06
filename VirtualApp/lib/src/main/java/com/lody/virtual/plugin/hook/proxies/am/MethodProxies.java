@@ -213,11 +213,6 @@ class MethodProxies {
             }
             return result;
         }
-
-        @Override
-        public boolean isEnable() {
-            return isAppProcess();
-        }
     }
 
 
@@ -713,11 +708,6 @@ class MethodProxies {
 
             VActivityManager.get().setServiceForeground(component, token, id, notification, removeNotification);
             return 0;
-        }
-
-        @Override
-        public boolean isEnable() {
-            return isAppProcess();
         }
     }
 

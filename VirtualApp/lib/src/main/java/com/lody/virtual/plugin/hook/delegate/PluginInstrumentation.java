@@ -95,12 +95,11 @@ public class PluginInstrumentation extends InstrumentationDelegate implements II
         }
 
         className = r.info.name;
+        PluginImpl plugin = PluginCore.get().getPlugin(r.pluginId);
         if (cl instanceof PluginClassLoader) {
-            PluginCore.get().setLoadClassPluginId(r.pluginId);
+            cl = plugin.getPluginDexClassLoader();
         }
         Activity activity = super.newActivity(cl, className, intent);
-
-        PluginImpl plugin = PluginCore.get().getPlugin(r.pluginId);
         mirror.android.app.Activity.mApplication.set(activity, plugin.getApp());
         return activity;
     }

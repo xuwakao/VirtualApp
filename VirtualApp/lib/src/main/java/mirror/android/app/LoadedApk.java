@@ -13,6 +13,7 @@ import android.content.pm.ApplicationInfo;
 import android.os.Handler;
 import android.os.IInterface;
 
+import mirror.RefBoolean;
 import mirror.RefClass;
 import mirror.RefObject;
 import mirror.RefMethod;
@@ -24,10 +25,16 @@ public class LoadedApk {
     public static RefObject<ClassLoader> mClassLoader;
     @MethodParams({boolean.class, Instrumentation.class})
     public static RefMethod<Application> makeApplication;
+    public static RefObject<Application> mApplication;
     @MethodParams({ServiceConnection.class, Context.class, Handler.class, int.class})
     public static RefMethod<IServiceConnection> getServiceDispatcher;
     @MethodParams({Context.class, ServiceConnection.class})
     public static RefMethod<IServiceConnection> forgetServiceDispatcher;
+
+    public static RefObject<ClassLoader> mBaseClassLoader;
+    public static RefBoolean mSecurityViolation;
+    public static RefBoolean mIncludeCode;
+    public static RefBoolean mRegisterPackage;
 
     public static class ReceiverDispatcher {
         public static Class Class = RefClass.load(ReceiverDispatcher.class, "android.app.LoadedApk$ReceiverDispatcher");

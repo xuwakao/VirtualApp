@@ -2,7 +2,6 @@ package com.lody.virtual.plugin.hook.proxies.classloader;
 
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
-import com.lody.virtual.plugin.core.PluginCore;
 
 import java.net.URL;
 import java.util.Enumeration;
@@ -25,11 +24,8 @@ public class PluginClassLoader extends PathClassLoader {
     }
 
     @Override
-    protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-        Class<?> loadClass = PluginCore.loadClass(name, resolve);
-        if (loadClass != null) {
-            return loadClass;
-        }
+    public Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+        Class<?> loadClass;
         try {
             loadClass = mOriginal.loadClass(name);
 //                VLog.d(TAG, "Loading class : " + loadClass);

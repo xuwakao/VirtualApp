@@ -27,8 +27,6 @@ import mirror.android.app.ActivityManagerNative;
 import mirror.android.app.ActivityThread;
 import mirror.android.app.IActivityManager;
 
-import static com.lody.virtual.plugin.fixer.PluginFixer.fixComponentApplicationInfo;
-
 /**
  * @author Lody
  * @see Handler.Callback
@@ -148,9 +146,6 @@ public class PluginHCallbackStub implements Handler.Callback, IInjector {
             getH().sendMessageAtFrontOfQueue(Message.obtain(msg));
             return false;
         }
-
-        fixComponentApplicationInfo(serviceInfo, VirtualCore.get().getContext().getApplicationInfo());
-        PluginCore.get().setLoadClassPluginId(pluginId);
         return true;
     }
 

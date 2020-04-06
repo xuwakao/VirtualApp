@@ -5,7 +5,6 @@ import android.content.pm.ApplicationInfo;
 import android.os.Process;
 
 import com.lody.virtual.helper.collection.SparseArray;
-import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.plugin.PluginImpl;
 import com.lody.virtual.plugin.hook.proxies.classloader.PluginClassLoader;
 
@@ -78,18 +77,6 @@ public class PluginCore {
         }
     }
 
-    public static Class<?> loadClass(String name, boolean resolve) {
-        int loadClassPluginId = get().getLoadClassPluginId();
-        if (loadClassPluginId < 0)
-            return null;
-        PluginImpl plugin = get().getPlugin(loadClassPluginId);
-        if (plugin == null) {
-            VLog.e(TAG, "plugin is NULL with id " + loadClassPluginId + ", " + name + " \n " + VLog.getStackTraceString(new IllegalStateException()));
-            return null;
-        }
-        return plugin.loadClass(name, resolve);
-    }
-
     public boolean isUseHostClassIfNotFound() {
         return useHostClassIfNotFound;
     }
@@ -135,13 +122,5 @@ public class PluginCore {
 
     public void setLatestCallRunningProcessPlugin(int pluginId) {
         mCallerContext.setLatestCallRunningProcessPlugin(pluginId);
-    }
-
-    public int getLoadClassPluginId() {
-        return mCallerContext.getLoadClassPluginId();
-    }
-
-    public void setLoadClassPluginId(int loadClassPluginId) {
-        mCallerContext.setLoadClassPluginId(loadClassPluginId);
     }
 }
