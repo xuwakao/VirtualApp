@@ -16,12 +16,17 @@
 
 package com.lody.virtual.plugin;
 
+import android.annotation.TargetApi;
 import android.app.Application;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.res.AssetManager;
 import android.content.res.Resources;
+import android.os.Build;
+import android.os.Process;
+import android.os.UserHandle;
 import android.util.AttributeSet;
 import android.view.ContextThemeWrapper;
 import android.view.InflateException;
@@ -31,9 +36,11 @@ import android.view.ViewStub;
 
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.hook.utils.FilePermissionUtils;
+import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.os.VEnvironment;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.plugin.core.PluginCore;
+import com.lody.virtual.plugin.utils.PluginHandle;
 import com.lody.virtual.remote.InstalledAppInfo;
 
 import java.io.File;
@@ -42,16 +49,19 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.lang.reflect.Constructor;
 
+import mirror.android.app.ContextImpl;
+
 /**
  * @author RePlugin Team
  */
 public class PluginContext extends ContextThemeWrapper {
+    private static final String TAG = "PluginContext";
 
     private final ClassLoader mNewClassLoader;
 
     private final Resources mNewResources;
 
-    private final String mPlugin;
+    private final int mPluginId;
 
     private final Object mSync = new Object();
     private final InstalledAppInfo mInstalledAppInfo;
@@ -74,14 +84,15 @@ public class PluginContext extends ContextThemeWrapper {
         }
     };
     private Application mApplication;
+    private ContentResolver mNewContentResolver;
 
     public PluginContext(Context base, int themeResId, ClassLoader cl, Resources r,
-                         String plugin, int userId, ApplicationInfo applicationInfo) {
+                         int pluginId, int userId, ApplicationInfo applicationInfo) {
         super(base, themeResId);
 
         mNewClassLoader = cl;
         mNewResources = r;
-        mPlugin = plugin;
+        mPluginId = pluginId;
         mUserId = VUserHandle.getUserId(userId);
         mApplicationInfo = applicationInfo;
         mInstalledAppInfo = VirtualCore.get().getInstalledAppInfo(applicationInfo.packageName, 0);
@@ -89,6 +100,17 @@ public class PluginContext extends ContextThemeWrapper {
 
     public void setApplication(Application application) {
         mApplication = application;
+        installContentResolver();
+    }
+
+    @TargetApi(17)
+    private void installContentResolver() {
+        if (Build.VERSION.SDK_INT >= 17) {
+            UserHandle myUserHandle = Process.myUserHandle();
+            UserHandle userHandle = mirror.android.os.UserHandle.of.call(PluginHandle.getPluginHandle(mPluginId, myUserHandle.hashCode()));
+            Class<?> clz = ContextImpl.ApplicationContentResolver.TYPE;
+            mNewContentResolver = Reflect.on(clz).create(this, VirtualCore.mainThread(), userHandle).get();
+        }
     }
 
     @Override
@@ -127,8 +149,8 @@ public class PluginContext extends ContextThemeWrapper {
                 mInflater = mInflater.cloneInContext(this);
             }
             return mInflater;
-        } else if(ACTIVITY_SERVICE.equals(name)) {
-            PluginCore.get().setLatestContext(getApplicationInfo());
+        } else if (ACTIVITY_SERVICE.equals(name)) {
+            PluginCore.get().setLatestCallRunningProcessPlugin(mPluginId);
         }
         return super.getSystemService(name);
     }
@@ -514,5 +536,13 @@ public class PluginContext extends ContextThemeWrapper {
     @Override
     public ApplicationInfo getApplicationInfo() {
         return mApplicationInfo;
+    }
+
+    @Override
+    public ContentResolver getContentResolver() {
+        if (mNewContentResolver != null) {
+            return mNewContentResolver;
+        }
+        return super.getContentResolver();
     }
 }

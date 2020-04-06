@@ -96,7 +96,7 @@ public class PluginInstrumentation extends InstrumentationDelegate implements II
 
         className = r.info.name;
         if (cl instanceof PluginClassLoader) {
-            ((PluginClassLoader) cl).setLoadClassPluginId(r.pluginId);
+            PluginCore.get().setLoadClassPluginId(r.pluginId);
         }
         Activity activity = super.newActivity(cl, className, intent);
 

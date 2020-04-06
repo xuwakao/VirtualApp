@@ -55,6 +55,7 @@ import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.os.VUserInfo;
 import com.lody.virtual.plugin.core.PluginCore;
+import com.lody.virtual.plugin.utils.PluginHandle;
 import com.lody.virtual.remote.AppTaskInfo;
 import com.lody.virtual.server.interfaces.IAppRequestListener;
 
@@ -72,7 +73,6 @@ import mirror.android.content.ContentProviderHolderOreo;
 import mirror.android.content.pm.UserInfo;
 
 import static com.lody.virtual.client.stub.VASettings.INTERCEPT_BACK_HOME;
-import static com.lody.virtual.plugin.fixer.PluginFixer.fixComponentApplicationInfo;
 
 /**
  * @author Lody
@@ -152,18 +152,18 @@ class MethodProxies {
         }
     }
 
-//    static class GetContentProviderExternal extends GetContentProvider {
-//
-//        @Override
-//        public String getMethodName() {
-//            return "getContentProviderExternal";
-//        }
-//
-//        @Override
-//        public int getProviderNameIndex() {
-//            return 0;
-//        }
-//    }
+    static class GetContentProviderExternal extends GetContentProvider {
+
+        @Override
+        public String getMethodName() {
+            return "getContentProviderExternal";
+        }
+
+        @Override
+        public int getProviderNameIndex() {
+            return 0;
+        }
+    }
 
     static class StartVoiceActivity extends StartActivity {
         @Override
@@ -1234,15 +1234,17 @@ class MethodProxies {
         public Object call(Object who, Method method, Object... args) throws Throwable {
             int nameIdx = getProviderNameIndex();
             String name = (String) args[nameIdx];
-            int userId = VUserHandle.myPluginUserId();
-            ProviderInfo info = VPackageManager.get().resolveContentProvider(name, 0, userId);
+            int userId = (int) args[2];
+            boolean isPluginHandle = PluginHandle.isPlugin(userId);
+            int pluginId = 0;
+            if (Build.VERSION.SDK_INT >= 17 && isPluginHandle) {
+                args[2] = PluginHandle.getUser(userId);
+                pluginId = PluginHandle.getPluginId(userId);
+            }
+
+            ProviderInfo info = VPackageManager.get().resolveContentProvider(name, 0, 0);
             if (info != null && info.enabled && isAppPkg(info.packageName)) {
-                fixComponentApplicationInfo(info, VirtualCore.get().getContext().getApplicationInfo());
-                int targetVPid = VActivityManager.get().initProcess(info.packageName, info.processName, userId);
-                if (targetVPid == -1) {
-                    return null;
-                }
-                args[nameIdx] = VASettings.getPluginAuthority(targetVPid);
+                args[nameIdx] = VASettings.getDeclaredCpAuthority(pluginId);
                 Object holder = method.invoke(who, args);
                 if (holder == null) {
                     return null;

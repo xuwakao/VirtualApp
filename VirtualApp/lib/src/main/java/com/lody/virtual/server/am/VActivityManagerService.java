@@ -645,7 +645,7 @@ public class VActivityManagerService implements IActivityManager {
     }
 
     @Override
-    public void processRestarted(String packageName, String processName, int userId) {
+    public void processRestarted(String packageName, String processName, int userId, int pluginId) {
         int callingPid = getCallingPid();
         int appId = VAppManagerService.get().getAppId(packageName);
         int uid = VUserHandle.getUid(userId, appId);
@@ -657,7 +657,7 @@ public class VActivityManagerService implements IActivityManager {
                 String stubProcessName = getProcessName(callingPid);
                 int vpid = parseVPid(stubProcessName);
                 if (vpid != -1) {
-                    performStartProcessLocked(uid, vpid, appInfo, processName);
+                    performStartProcessLocked(uid, vpid, appInfo, processName, pluginId);
                 }
             }
         }
@@ -848,7 +848,13 @@ public class VActivityManagerService implements IActivityManager {
         if (vpid == -1) {
             return null;
         }
-        app = performStartProcessLocked(uid, vpid, info, processName);
+        int pluginId = -1;
+        /*if (ps.isPlugin(userId)) {
+            pluginId = queryFreeStubPluginLocked();
+            if (pluginId == -1)
+                return null;
+        }*/
+        app = performStartProcessLocked(uid, vpid, info, processName, pluginId);
         if (app != null) {
             app.pkgList.add(info.packageName);
         }
@@ -875,11 +881,12 @@ public class VActivityManagerService implements IActivityManager {
         return Process.myUid();
     }
 
-    private ProcessRecord performStartProcessLocked(int vuid, int vpid, ApplicationInfo info, String processName) {
+    private ProcessRecord performStartProcessLocked(int vuid, int vpid, ApplicationInfo info, String processName, int pluginId) {
         ProcessRecord app = new ProcessRecord(info, processName, vuid, vpid);
         Bundle extras = new Bundle();
         BundleCompat.putBinder(extras, "_VA_|_binder_", app);
         extras.putInt("_VA_|_vuid_", vuid);
+        extras.putInt("_VA_|_vpid_", vpid);
         extras.putString("_VA_|_process_", processName);
         extras.putString("_VA_|_pkg_", info.packageName);
         Bundle res = ProviderCall.call(VASettings.getStubAuthority(vpid), "_VA_|_init_process_", null, extras);

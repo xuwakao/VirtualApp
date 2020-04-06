@@ -100,7 +100,7 @@ public interface IActivityManager {
 
     String getPackageForIntentSender(IBinder binder) throws RemoteException;
 
-    void processRestarted(String packageName, String processName, int userId) throws RemoteException;
+    void processRestarted(String packageName, String processName, int userId, int pluginId) throws RemoteException;
 
     void broadcastFinish(PendingResultData res) throws RemoteException;
 

@@ -138,6 +138,13 @@ public class PluginImpl extends IPluginClient.Stub {
             CompatibilityInfoHolder.set.call(LoadedApkICS.mCompatibilityInfo.get(mBoundApplication.info), compatInfo);
         }
 
+        /**
+         * install content providers into ActivityThread cache
+         *
+         * Use this can support ContentProvider.
+         * If not use this, {@link com.lody.virtual.plugin.hook.proxies.am.MethodProxies.GetContentProvider} and
+         * {@link PluginContext#installContentResolver()} can also support ContentProvider.
+         */
         if (data.providers != null) {
             installContentProviders(mInitialApplication, data.providers);
         }
@@ -211,7 +218,8 @@ public class PluginImpl extends IPluginClient.Stub {
                     continue;
                 }
                 ProviderInfo info = ContentProviderHolderOreo.info.get(holder);
-                if (!info.authority.startsWith(VASettings.STUB_PLUGIN_AUTHORITY)) {
+                if (!info.authority.startsWith(VASettings.STUB_PLUGIN_AUTHORITY) &&
+                        !info.authority.startsWith(VASettings.STUB_DECLARED_CP_AUTHORITY)) {
                     provider = ProviderHook.createProxy(true, info.authority, provider);
                     ActivityThread.ProviderClientRecordJB.mProvider.set(clientRecord, provider);
                     ContentProviderHolderOreo.provider.set(holder, provider);
@@ -223,7 +231,8 @@ public class PluginImpl extends IPluginClient.Stub {
                     continue;
                 }
                 ProviderInfo info = IActivityManager.ContentProviderHolder.info.get(holder);
-                if (!info.authority.startsWith(VASettings.STUB_PLUGIN_AUTHORITY)) {
+                if (!info.authority.startsWith(VASettings.STUB_PLUGIN_AUTHORITY) &&
+                        !info.authority.startsWith(VASettings.STUB_DECLARED_CP_AUTHORITY)) {
                     provider = ProviderHook.createProxy(true, info.authority, provider);
                     ActivityThread.ProviderClientRecordJB.mProvider.set(clientRecord, provider);
                     IActivityManager.ContentProviderHolder.provider.set(holder, provider);
@@ -231,7 +240,8 @@ public class PluginImpl extends IPluginClient.Stub {
             } else {
                 String authority = ActivityThread.ProviderClientRecord.mName.get(clientRecord);
                 IInterface provider = ActivityThread.ProviderClientRecord.mProvider.get(clientRecord);
-                if (provider != null && !authority.startsWith(VASettings.STUB_PLUGIN_AUTHORITY)) {
+                if (provider != null && !authority.startsWith(VASettings.STUB_PLUGIN_AUTHORITY) &&
+                        !authority.startsWith(VASettings.STUB_DECLARED_CP_AUTHORITY)) {
                     provider = ProviderHook.createProxy(true, authority, provider);
                     ActivityThread.ProviderClientRecord.mProvider.set(clientRecord, provider);
                 }
@@ -304,7 +314,7 @@ public class PluginImpl extends IPluginClient.Stub {
         }
 
         mPluginContext = new PluginContext(VirtualCore.get().getContext(), mBoundApplication.appInfo.theme,
-                mPluginDexClassLoader, mPkgResources, mPackageName, mVUid, mBoundApplication.appInfo);
+                mPluginDexClassLoader, mPkgResources, mVPid, mVUid, mBoundApplication.appInfo);
         return true;
     }
 

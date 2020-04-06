@@ -150,7 +150,7 @@ public class PluginHCallbackStub implements Handler.Callback, IInjector {
         }
 
         fixComponentApplicationInfo(serviceInfo, VirtualCore.get().getContext().getApplicationInfo());
-        PluginCore.get().getClassLoader().setLoadClassPluginId(pluginId);
+        PluginCore.get().setLoadClassPluginId(pluginId);
         return true;
     }
 

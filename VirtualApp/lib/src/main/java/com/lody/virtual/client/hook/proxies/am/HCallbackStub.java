@@ -174,7 +174,7 @@ public class HCallbackStub implements Handler.Callback, IInjector {
                                     return true;
                                 }
                                 VActivityManager.get().processRestarted(info.packageName,
-                                        info.processName, saveInstance.userId);
+                                        info.processName, saveInstance.userId, saveInstance.pluginId);
                                 getH().sendMessageAtFrontOfQueue(Message.obtain(msg));
                                 return false;
                             }
@@ -228,7 +228,7 @@ public class HCallbackStub implements Handler.Callback, IInjector {
             if (installedAppInfo == null) {
                 return true;
             }
-            VActivityManager.get().processRestarted(info.packageName, info.processName, saveInstance.userId);
+            VActivityManager.get().processRestarted(info.packageName, info.processName, saveInstance.userId, saveInstance.pluginId);
             getH().sendMessageAtFrontOfQueue(Message.obtain(msg));
             return false;
         }

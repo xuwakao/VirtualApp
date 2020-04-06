@@ -262,9 +262,9 @@ public class VActivityManager {
         }
     }
 
-    public void processRestarted(String packageName, String processName, int userId) {
+    public void processRestarted(String packageName, String processName, int userId, int pluginId) {
         try {
-            getService().processRestarted(packageName, processName, userId);
+            getService().processRestarted(packageName, processName, userId, pluginId);
         } catch (RemoteException e) {
             e.printStackTrace();
         }

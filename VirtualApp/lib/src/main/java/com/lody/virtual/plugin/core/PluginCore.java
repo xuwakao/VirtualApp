@@ -21,7 +21,7 @@ public class PluginCore {
     private boolean useHostClassIfNotFound;
     private SparseArray<PluginImpl> mPlugins = new SparseArray<>();
     private PluginClassLoader mPluginClassLoader;
-    private ApplicationInfo mLatestContext;
+    private PluginCallerContext mCallerContext;
 
     private static class Singleton {
         static final PluginCore singleton = new PluginCore();
@@ -32,6 +32,7 @@ public class PluginCore {
     }
 
     private PluginCore() {
+        mCallerContext = new PluginCallerContext();
     }
 
     public void putPlugin(int vpid, PluginImpl client) {
@@ -55,10 +56,13 @@ public class PluginCore {
     public List<ActivityManager.RunningAppProcessInfo> getProcessList() {
         synchronized (mPlugins) {
             List<ActivityManager.RunningAppProcessInfo> infoList = new ArrayList<>();
-            if (mLatestContext != null) {
+            int latestCallRunningProcessPlugin = mCallerContext.getLatestCallRunningProcessPlugin();
+            if (latestCallRunningProcessPlugin >= 0) {
+                PluginImpl plugin = getPlugin(latestCallRunningProcessPlugin);
+                ApplicationInfo applicationInfo = plugin.getApplicationInfo();
                 ActivityManager.RunningAppProcessInfo processInfo = new ActivityManager.RunningAppProcessInfo();
                 processInfo.pid = Process.myPid();
-                processInfo.processName = mLatestContext.processName == null ? mLatestContext.packageName : mLatestContext.packageName;
+                processInfo.processName = applicationInfo.processName == null ? applicationInfo.packageName : applicationInfo.packageName;
                 infoList.add(processInfo);
             }
             /*for (int i = 0; i < mPlugins.size(); i++) {
@@ -74,10 +78,13 @@ public class PluginCore {
         }
     }
 
-    public static Class<?> loadClass(int vpid, String name, boolean resolve) {
-        PluginImpl plugin = get().getPlugin(vpid);
+    public static Class<?> loadClass(String name, boolean resolve) {
+        int loadClassPluginId = get().getLoadClassPluginId();
+        if (loadClassPluginId < 0)
+            return null;
+        PluginImpl plugin = get().getPlugin(loadClassPluginId);
         if (plugin == null) {
-            VLog.e(TAG, "plugin is NULL with id " + vpid + ", " + name + " \n " + VLog.getStackTraceString(new IllegalStateException()));
+            VLog.e(TAG, "plugin is NULL with id " + loadClassPluginId + ", " + name + " \n " + VLog.getStackTraceString(new IllegalStateException()));
             return null;
         }
         return plugin.loadClass(name, resolve);
@@ -126,11 +133,15 @@ public class PluginCore {
     }
 
 
-    public void setLatestContext(ApplicationInfo latestContext) {
-        mLatestContext = latestContext;
+    public void setLatestCallRunningProcessPlugin(int pluginId) {
+        mCallerContext.setLatestCallRunningProcessPlugin(pluginId);
     }
 
-    public ApplicationInfo getLatestContext() {
-        return mLatestContext;
+    public int getLoadClassPluginId() {
+        return mCallerContext.getLoadClassPluginId();
+    }
+
+    public void setLoadClassPluginId(int loadClassPluginId) {
+        mCallerContext.setLoadClassPluginId(loadClassPluginId);
     }
 }

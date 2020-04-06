@@ -39,15 +39,17 @@ public class PluginFixer {
         if (icon > 0) {
             mirror.android.app.Activity.mActivityInfo.get(activity).icon = icon;
         } else if (info.icon > 0) {
-            fixComponentApplicationInfo(mirror.android.app.Activity.mActivityInfo.get(activity), info);
-            mirror.android.app.Activity.mActivityInfo.get(activity).applicationInfo.icon = 0;
+            ApplicationInfo newAppInfo = new ApplicationInfo(info);
+            newAppInfo.icon = 0;
+            mirror.android.app.Activity.mActivityInfo.get(activity).applicationInfo = newAppInfo;
         }
 
         if (logo > 0) {
             mirror.android.app.Activity.mActivityInfo.get(activity).logo = logo;
         } else if (info.logo > 0) {
-            fixComponentApplicationInfo(mirror.android.app.Activity.mActivityInfo.get(activity), info);
-            mirror.android.app.Activity.mActivityInfo.get(activity).applicationInfo.logo = 0;
+            ApplicationInfo newAppInfo = new ApplicationInfo(info);
+            newAppInfo.logo = 0;
+            mirror.android.app.Activity.mActivityInfo.get(activity).applicationInfo = newAppInfo;
         }
 
         mirror.android.app.Activity.mApplication.set(activity, plugin.getApp());

@@ -41,6 +41,7 @@ public class ActivityThread {
     public static RefObject<android.app.Application> mInitialApplication;
     public static RefObject<Instrumentation> mInstrumentation;
     public static RefObject<Map<String, WeakReference<?>>> mPackages;
+    public static RefObject<Map<String, WeakReference<?>>> mResourcePackages;
     public static RefObject<Map> mProviderMap;
     @MethodParams({IBinder.class, List.class})
     public static RefMethod<Void> performNewIntents;
