@@ -53,7 +53,7 @@ public class StubContentResolver extends ContentObserver {
     @Override
     public void onChange(boolean selfChange) {
         if (mResolverData != null) {
-            VLog.d(TAG, "content observer receive changed : " + selfChange);
+//            VLog.d(TAG, "content observer receive changed : " + selfChange);
             getContentObserver().onChange(selfChange);
         } else {
             VLog.w(TAG, "[1]content resolver receive change but not set data");
@@ -65,7 +65,7 @@ public class StubContentResolver extends ContentObserver {
     @Override
     public void onChange(boolean selfChange, Uri uri) {
         if (mResolverData != null) {
-            VLog.d(TAG, "content observer receive changed : " + selfChange + ", " + uri);
+//            VLog.d(TAG, "content observer receive changed : " + selfChange + ", " + uri);
             getContentObserver().onChange(selfChange, uri);
         } else {
             VLog.w(TAG, "[2]content resolver receive change but not set data");

@@ -127,6 +127,8 @@ public class PluginContext extends ContextThemeWrapper {
                 mInflater = mInflater.cloneInContext(this);
             }
             return mInflater;
+        } else if(ACTIVITY_SERVICE.equals(name)) {
+            PluginCore.get().setLatestContext(getApplicationInfo());
         }
         return super.getSystemService(name);
     }

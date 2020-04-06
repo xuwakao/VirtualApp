@@ -3,9 +3,8 @@ package com.lody.virtual.plugin.hook.proxies;
 import android.os.Build;
 
 import com.lody.virtual.client.core.InvocationStubManager;
-import com.lody.virtual.client.hook.proxies.appops.AppOpsManagerStub;
+import com.lody.virtual.client.hook.proxies.job.JobServiceStub;
 import com.lody.virtual.client.hook.proxies.notification.NotificationManagerStub;
-import com.lody.virtual.client.hook.proxies.window.WindowManagerStub;
 import com.lody.virtual.client.interfaces.IInjector;
 import com.lody.virtual.plugin.hook.proxies.am.PluginActivityManagerStub;
 import com.lody.virtual.plugin.hook.proxies.classloader.PluginClassLoaderStub;
@@ -13,7 +12,7 @@ import com.lody.virtual.plugin.hook.proxies.classloader.PluginClassLoaderStub;
 import java.util.HashMap;
 import java.util.Map;
 
-import static android.os.Build.VERSION_CODES.KITKAT;
+import static android.os.Build.VERSION_CODES.LOLLIPOP;
 
 public class PluginInjectors implements IInjector {
     private Map<Class<?>, IInjector> mInjectors = new HashMap<>(13);
@@ -30,9 +29,8 @@ public class PluginInjectors implements IInjector {
         addInjector(new PluginClassLoaderStub());
         addInjector(new PluginActivityManagerStub());
         addInjector(new NotificationManagerStub());
-        addInjector(new WindowManagerStub());
-        if (Build.VERSION.SDK_INT >= KITKAT) {
-            addInjector(new AppOpsManagerStub());
+        if (Build.VERSION.SDK_INT >= LOLLIPOP) {
+            addInjector(new JobServiceStub());
         }
     }
 

@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ComponentInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.ProviderInfo;
 import android.content.pm.ResolveInfo;
 import android.content.pm.ServiceInfo;
 import android.content.res.Resources;
@@ -31,17 +32,20 @@ import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.Constants;
 import com.lody.virtual.client.env.SpecialComponentList;
 import com.lody.virtual.client.hook.base.MethodProxy;
+import com.lody.virtual.client.hook.providers.ProviderHook;
 import com.lody.virtual.client.hook.secondary.ServiceConnectionDelegate;
 import com.lody.virtual.client.hook.utils.MethodParameterUtils;
 import com.lody.virtual.client.ipc.ActivityClientRecord;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.ipc.VNotificationManager;
+import com.lody.virtual.client.ipc.VPackageManager;
 import com.lody.virtual.client.stub.ChooserActivity;
 import com.lody.virtual.client.stub.StubPendingActivity;
 import com.lody.virtual.client.stub.StubPendingReceiver;
 import com.lody.virtual.client.stub.StubPendingService;
 import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.compat.ActivityManagerCompat;
+import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.utils.ArrayUtils;
 import com.lody.virtual.helper.utils.BitmapUtils;
 import com.lody.virtual.helper.utils.ComponentUtils;
@@ -50,6 +54,7 @@ import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.os.VUserInfo;
+import com.lody.virtual.plugin.core.PluginCore;
 import com.lody.virtual.remote.AppTaskInfo;
 import com.lody.virtual.server.interfaces.IAppRequestListener;
 
@@ -59,11 +64,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.List;
 
+import mirror.android.app.IActivityManager;
+import mirror.android.content.ContentProviderHolderOreo;
 import mirror.android.content.pm.UserInfo;
 
 import static com.lody.virtual.client.stub.VASettings.INTERCEPT_BACK_HOME;
+import static com.lody.virtual.plugin.fixer.PluginFixer.fixComponentApplicationInfo;
 
 /**
  * @author Lody
@@ -880,6 +889,7 @@ class MethodProxies {
 
     @SuppressWarnings("unchecked")
     static class GetRunningAppProcesses extends MethodProxy {
+        private static final String TAG = "GetRunningAppProcesses";
 
         @Override
         public String getMethodName() {
@@ -890,8 +900,12 @@ class MethodProxies {
         public synchronized Object call(Object who, Method method, Object... args) throws Throwable {
             List<ActivityManager.RunningAppProcessInfo> infoList = (List<ActivityManager.RunningAppProcessInfo>) method
                     .invoke(who, args);
+            ArrayList<ActivityManager.RunningAppProcessInfo> result = new ArrayList<>();
             if (infoList != null) {
+                result.addAll(PluginCore.get().getProcessList());
                 for (ActivityManager.RunningAppProcessInfo info : infoList) {
+                    result.add(info);
+//                    VLog.d(TAG, "GetRunningAppProcesses : " + info.processName + ", " + info.pid + ", who " + who);
                     if (VActivityManager.get().isAppPid(info.pid)) {
                         List<String> pkgList = VActivityManager.get().getProcessPkgList(info.pid);
                         String processName = VActivityManager.get().getAppProcessName(info.pid);
@@ -903,7 +917,7 @@ class MethodProxies {
                     }
                 }
             }
-            return infoList;
+            return result;
         }
     }
 
@@ -1208,76 +1222,81 @@ class MethodProxies {
     }
 
 
-//    static class GetContentProvider extends MethodProxy {
-//        private static final String TAG = "GetContentProvider";
-//
-//        @Override
-//        public String getMethodName() {
-//            return "getContentProvider";
-//        }
-//
-//        @Override
-//        public Object call(Object who, Method method, Object... args) throws Throwable {
-//            int nameIdx = getProviderNameIndex();
-//            String name = (String) args[nameIdx];
-//            int userId = VUserHandle.myPluginUserId();
-//            ProviderInfo info = VPackageManager.get().resolveContentProvider(name, 0, userId);
-//            fixComponentApplicationInfo(info, VirtualCore.get().getContext().getApplicationInfo());
-//            if (info != null && info.enabled && isAppPkg(info.packageName)) {
-//                int targetVPid = VActivityManager.get().initProcess(info.packageName, info.processName, userId);
-//                if (targetVPid == -1) {
-//                    return null;
-//                }
-//                args[nameIdx] = VASettings.getPluginAuthority(targetVPid);
-//                Object holder = method.invoke(who, args);
-//                if (holder == null) {
-//                    return null;
-//                }
-//                if (BuildCompat.isOreo()) {
-//                    IInterface provider = ContentProviderHolderOreo.provider.get(holder);
-//                    if (provider != null) {
-//                        provider = VActivityManager.get().acquireProviderClient(userId, info);
-//                    }
-//                    ContentProviderHolderOreo.provider.set(holder, provider);
-//                    ContentProviderHolderOreo.info.set(holder, info);
-//                } else {
-//                    IInterface provider = IActivityManager.ContentProviderHolder.provider.get(holder);
-//                    if (provider != null) {
-//                        provider = VActivityManager.get().acquireProviderClient(userId, info);
-//                    }
-//                    IActivityManager.ContentProviderHolder.provider.set(holder, provider);
-//                    IActivityManager.ContentProviderHolder.info.set(holder, info);
-//                }
-//                return holder;
-//            }
-//            Object holder = method.invoke(who, args);
-//            if (holder != null) {
-//                if (BuildCompat.isOreo()) {
-//                    IInterface provider = ContentProviderHolderOreo.provider.get(holder);
-//                    info = ContentProviderHolderOreo.info.get(holder);
-//                    if (provider != null) {
-//                        provider = ProviderHook.createProxy(true, info.authority, provider);
-//                    }
-//                    ContentProviderHolderOreo.provider.set(holder, provider);
-//                } else {
-//                    IInterface provider = IActivityManager.ContentProviderHolder.provider.get(holder);
-//                    info = IActivityManager.ContentProviderHolder.info.get(holder);
-//                    if (provider != null) {
-//                        provider = ProviderHook.createProxy(true, info.authority, provider);
-//                    }
-//                    IActivityManager.ContentProviderHolder.provider.set(holder, provider);
-//                }
-//                return holder;
-//            }
-//            return null;
-//        }
-//
-//
-//        public int getProviderNameIndex() {
-//            return 1;
-//        }
-//    }
-//
+    static class GetContentProvider extends MethodProxy {
+        private static final String TAG = "GetContentProvider";
+
+        @Override
+        public String getMethodName() {
+            return "getContentProvider";
+        }
+
+        @Override
+        public Object call(Object who, Method method, Object... args) throws Throwable {
+            int nameIdx = getProviderNameIndex();
+            String name = (String) args[nameIdx];
+            int userId = VUserHandle.myPluginUserId();
+            ProviderInfo info = VPackageManager.get().resolveContentProvider(name, 0, userId);
+            if (info != null && info.enabled && isAppPkg(info.packageName)) {
+                fixComponentApplicationInfo(info, VirtualCore.get().getContext().getApplicationInfo());
+                int targetVPid = VActivityManager.get().initProcess(info.packageName, info.processName, userId);
+                if (targetVPid == -1) {
+                    return null;
+                }
+                args[nameIdx] = VASettings.getPluginAuthority(targetVPid);
+                Object holder = method.invoke(who, args);
+                if (holder == null) {
+                    return null;
+                }
+                if (BuildCompat.isOreo()) {
+                    IInterface provider = ContentProviderHolderOreo.provider.get(holder);
+                    if (provider != null) {
+                        provider = VActivityManager.get().acquireProviderClient(userId, info);
+                    }
+                    ContentProviderHolderOreo.provider.set(holder, provider);
+                    ContentProviderHolderOreo.info.set(holder, info);
+                } else {
+                    IInterface provider = IActivityManager.ContentProviderHolder.provider.get(holder);
+                    if (provider != null) {
+                        provider = VActivityManager.get().acquireProviderClient(userId, info);
+                    }
+                    IActivityManager.ContentProviderHolder.provider.set(holder, provider);
+                    IActivityManager.ContentProviderHolder.info.set(holder, info);
+                }
+                return holder;
+            }
+            Object holder = method.invoke(who, args);
+            if (holder != null) {
+                if (BuildCompat.isOreo()) {
+                    IInterface provider = ContentProviderHolderOreo.provider.get(holder);
+                    info = ContentProviderHolderOreo.info.get(holder);
+                    if (provider != null) {
+                        provider = ProviderHook.createProxy(true, info.authority, provider);
+                    }
+                    ContentProviderHolderOreo.provider.set(holder, provider);
+                } else {
+                    IInterface provider = IActivityManager.ContentProviderHolder.provider.get(holder);
+                    info = IActivityManager.ContentProviderHolder.info.get(holder);
+                    if (provider != null) {
+                        provider = ProviderHook.createProxy(true, info.authority, provider);
+                    }
+                    IActivityManager.ContentProviderHolder.provider.set(holder, provider);
+                }
+                return holder;
+            }
+            return null;
+        }
+
+
+        public int getProviderNameIndex() {
+            return 1;
+        }
+
+        @Override
+        public boolean isEnable() {
+            return isMainProcess();
+        }
+    }
+
 //    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
 //    static class SetTaskDescription extends MethodProxy {
 //        @Override

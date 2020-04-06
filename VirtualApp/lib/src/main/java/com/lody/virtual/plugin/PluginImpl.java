@@ -156,6 +156,7 @@ public class PluginImpl extends IPluginClient.Stub {
                 InvocationStubManager.getInstance().checkEnv(PluginInstrumentation.class);
             }
         } catch (Throwable e) {
+            VLog.e(TAG, "application something wrong " + e);
             if (!PluginInstrumentation.getDefault().onException(mInitialApplication, e)) {
                 VLog.e(TAG, "Unable to create plugin application " + mInitialApplication.getClass().getName()
                         + ": " + e.toString(), e);
