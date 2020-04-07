@@ -1,6 +1,7 @@
 package io.virtualapp.home.adapters;
 
 import android.content.Context;
+import android.support.v7.widget.AppCompatCheckBox;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.view.LayoutInflater;
@@ -83,10 +84,23 @@ public class CloneAppListAdapter extends DragSelectRecyclerViewAdapter<CloneAppL
             holder.labelView.setVisibility(View.INVISIBLE);
         }
 
+        holder.pluginCheckView.setChecked(info.isPlugin);
+        holder.pluginCheckView.setTag(info);
+        holder.pluginCheckView.setOnClickListener(mPluginCheckListener);
+
         holder.itemView.setOnClickListener(v -> {
             mItemEventListener.onItemClick(info, position);
         });
     }
+
+    private View.OnClickListener mPluginCheckListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            AppInfo appInfo = (AppInfo) v.getTag();
+            appInfo.isPlugin = !appInfo.isPlugin;
+            notifyDataSetChanged();
+        }
+    };
 
     @Override
     public void onAttachedToRecyclerView(RecyclerView recyclerView) {
@@ -123,6 +137,7 @@ public class CloneAppListAdapter extends DragSelectRecyclerViewAdapter<CloneAppL
     }
 
     class ViewHolder extends RecyclerView.ViewHolder {
+        private AppCompatCheckBox pluginCheckView;
         private ImageView iconView;
         private TextView nameView;
         private ImageView appCheckView;
@@ -134,6 +149,7 @@ public class CloneAppListAdapter extends DragSelectRecyclerViewAdapter<CloneAppL
                 iconView = (ImageView) itemView.findViewById(R.id.item_app_icon);
                 nameView = (TextView) itemView.findViewById(R.id.item_app_name);
                 appCheckView = (ImageView) itemView.findViewById(R.id.item_app_checked);
+                pluginCheckView = (AppCompatCheckBox) itemView.findViewById(R.id.item_plugin_checked);
                 labelView = (LabelView) itemView.findViewById(R.id.item_app_clone_count);
             }
         }
