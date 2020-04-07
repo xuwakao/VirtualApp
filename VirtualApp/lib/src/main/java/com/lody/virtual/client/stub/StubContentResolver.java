@@ -43,6 +43,8 @@ public class StubContentResolver extends ContentObserver {
     }
 
     public Object getTransport() {
+        if (mResolverData == null)
+            return null;
         return mResolverData.observer;
     }
 

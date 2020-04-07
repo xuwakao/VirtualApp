@@ -818,6 +818,13 @@ public class VActivityManagerService implements IActivityManager {
                 VLog.d(TAG, "plugin child process");
                 break;
             }
+
+            if (!ps.isLaunched(userId)) {
+                sendFirstLaunchBroadcast(ps, userId);
+                ps.setLaunched(userId, true);
+                VAppManagerService.get().savePersistenceData();
+            }
+
             int uid = VUserHandle.getUid(userId, ps.appId);
             ProcessRecord app = mPluginNames.get(processName, uid);
             if (app != null && app.pluginClient.asBinder().isBinderAlive()) {

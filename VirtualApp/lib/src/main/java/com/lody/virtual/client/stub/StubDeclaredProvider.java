@@ -8,7 +8,7 @@ import android.net.Uri;
 public class StubDeclaredProvider extends ContentProvider {
     @Override
     public boolean onCreate() {
-        return false;
+        return true;
     }
 
     @Override

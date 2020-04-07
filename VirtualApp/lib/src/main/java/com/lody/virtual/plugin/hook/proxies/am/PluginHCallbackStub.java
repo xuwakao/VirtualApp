@@ -269,7 +269,7 @@ public class PluginHCallbackStub implements Handler.Callback, IInjector {
         Handler.Callback callback = getHCallback();
         boolean envBad = callback != this;
         if (callback != null && envBad) {
-            VLog.d(TAG, "HCallback has bad, other callback = " + callback);
+            VLog.d(TAG, "PluginHCallback has bad, other callback = " + callback);
         }
         return envBad;
     }

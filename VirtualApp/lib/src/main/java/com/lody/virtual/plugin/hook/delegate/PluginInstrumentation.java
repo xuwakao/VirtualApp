@@ -10,13 +10,16 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.os.PersistableBundle;
 
+import com.lody.virtual.client.core.InvocationStubManager;
 import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.client.fixer.ContextFixer;
 import com.lody.virtual.client.hook.delegate.InstrumentationDelegate;
 import com.lody.virtual.client.interfaces.IInjector;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.plugin.PluginImpl;
 import com.lody.virtual.plugin.core.PluginCore;
 import com.lody.virtual.plugin.fixer.PluginFixer;
+import com.lody.virtual.plugin.hook.proxies.am.PluginHCallbackStub;
 import com.lody.virtual.plugin.hook.proxies.classloader.PluginClassLoader;
 import com.lody.virtual.remote.StubActivityRecord;
 
@@ -113,6 +116,9 @@ public class PluginInstrumentation extends InstrumentationDelegate implements II
         }
         PluginImpl plugin = PluginCore.get().getPlugin(r.pluginId);
         PluginFixer.fixActivity(activity, plugin);
+        ContextFixer.fixContext(activity);
+        r.intent.setExtrasClassLoader(plugin.getPluginDexClassLoader());
+        InvocationStubManager.getInstance().checkEnv(PluginHCallbackStub.class);
         super.callActivityOnCreate(activity, icicle);
     }
 
@@ -125,6 +131,9 @@ public class PluginInstrumentation extends InstrumentationDelegate implements II
         }
         PluginImpl plugin = PluginCore.get().getPlugin(r.pluginId);
         PluginFixer.fixActivity(activity, plugin);
+        ContextFixer.fixContext(activity);
+        r.intent.setExtrasClassLoader(plugin.getPluginDexClassLoader());
+        InvocationStubManager.getInstance().checkEnv(PluginHCallbackStub.class);
         super.callActivityOnCreate(activity, icicle, persistentState);
     }
 }

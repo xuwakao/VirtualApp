@@ -110,6 +110,12 @@ public class PluginImpl extends IPluginClient.Stub {
             return;
         }
 
+        try {
+            fixInstalledProviders();
+        } catch (Throwable e) {
+            VLog.e(TAG, "fix installed cp failed " + e);
+        }
+
         AppBindData data = new AppBindData();
         data.appInfo = VPackageManager.get().getApplicationInfo(packageName, 0, getUserId(mVUid));
         data.processName = processName;
@@ -153,7 +159,11 @@ public class PluginImpl extends IPluginClient.Stub {
         Map<String, WeakReference<?>> loadedApkCache = ActivityThread.mPackages.get(VirtualCore.mainThread());
         loadedApkCache.put(packageName, new WeakReference<Object>(data.info));
         LoadedApk.mClassLoader.set(data.info, mPluginDexClassLoader);
-
+        try {
+            PluginInjectors.get().inject();
+        } catch (Throwable throwable) {
+            VLog.e(TAG, "inject failed");
+        }
         /**
          * install content providers into ActivityThread cache
          *
@@ -164,7 +174,6 @@ public class PluginImpl extends IPluginClient.Stub {
         if (data.providers != null) {
             installContentProviders(mInitialApplication, data.providers);
         }
-        fixInstalledProviders();
 
         if (lock != null) {
             lock.open();
@@ -172,7 +181,6 @@ public class PluginImpl extends IPluginClient.Stub {
         }
 
         try {
-            PluginInjectors.get().inject();
             PluginInstrumentation.getDefault().callApplicationOnCreate(mInitialApplication);
             InvocationStubManager.getInstance().checkEnv(PluginHCallbackStub.class);
             if (conflict) {
@@ -224,7 +232,7 @@ public class PluginImpl extends IPluginClient.Stub {
     }
 
     private void fixInstalledProviders() {
-        clearSettingProvider();
+//        clearSettingProvider();
         Map clientMap = ActivityThread.mProviderMap.get(VirtualCore.mainThread());
         for (Object clientRecord : clientMap.values()) {
             if (BuildCompat.isOreo()) {
@@ -235,7 +243,8 @@ public class PluginImpl extends IPluginClient.Stub {
                 }
                 ProviderInfo info = ContentProviderHolderOreo.info.get(holder);
                 if (!info.authority.startsWith(VASettings.STUB_PLUGIN_AUTHORITY) &&
-                        !info.authority.startsWith(VASettings.STUB_DECLARED_CP_AUTHORITY)) {
+                        !info.authority.startsWith(VASettings.STUB_DECLARED_CP_AUTHORITY) &&
+                        !info.authority.startsWith("settings")) {
                     provider = ProviderHook.createProxy(true, info.authority, provider);
                     ActivityThread.ProviderClientRecordJB.mProvider.set(clientRecord, provider);
                     ContentProviderHolderOreo.provider.set(holder, provider);
@@ -248,7 +257,8 @@ public class PluginImpl extends IPluginClient.Stub {
                 }
                 ProviderInfo info = IActivityManager.ContentProviderHolder.info.get(holder);
                 if (!info.authority.startsWith(VASettings.STUB_PLUGIN_AUTHORITY) &&
-                        !info.authority.startsWith(VASettings.STUB_DECLARED_CP_AUTHORITY)) {
+                        !info.authority.startsWith(VASettings.STUB_DECLARED_CP_AUTHORITY) &&
+                        !info.authority.startsWith("settings")) {
                     provider = ProviderHook.createProxy(true, info.authority, provider);
                     ActivityThread.ProviderClientRecordJB.mProvider.set(clientRecord, provider);
                     IActivityManager.ContentProviderHolder.provider.set(holder, provider);
@@ -257,7 +267,8 @@ public class PluginImpl extends IPluginClient.Stub {
                 String authority = ActivityThread.ProviderClientRecord.mName.get(clientRecord);
                 IInterface provider = ActivityThread.ProviderClientRecord.mProvider.get(clientRecord);
                 if (provider != null && !authority.startsWith(VASettings.STUB_PLUGIN_AUTHORITY) &&
-                        !authority.startsWith(VASettings.STUB_DECLARED_CP_AUTHORITY)) {
+                        !authority.startsWith(VASettings.STUB_DECLARED_CP_AUTHORITY) &&
+                        !authority.startsWith("settings")) {
                     provider = ProviderHook.createProxy(true, authority, provider);
                     ActivityThread.ProviderClientRecord.mProvider.set(clientRecord, provider);
                 }

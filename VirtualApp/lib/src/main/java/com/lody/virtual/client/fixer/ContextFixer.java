@@ -50,7 +50,7 @@ public class ContextFixer {
         } catch (Throwable e) {
             e.printStackTrace();
         }
-        if (!VirtualCore.get().isVAppProcess()) {
+        if (!VirtualCore.get().isVAppProcess() && !VirtualCore.get().isMainProcess()) {
             return;
         }
         DropBoxManager dm = (DropBoxManager) context.getSystemService(Context.DROPBOX_SERVICE);
