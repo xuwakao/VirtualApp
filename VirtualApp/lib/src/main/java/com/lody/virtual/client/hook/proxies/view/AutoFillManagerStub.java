@@ -1,6 +1,8 @@
 package com.lody.virtual.client.hook.proxies.view;
 
 import android.annotation.SuppressLint;
+import android.content.ComponentName;
+import android.os.Build;
 import android.util.Log;
 
 import com.lody.virtual.client.hook.base.BinderInvocationProxy;
@@ -21,6 +23,7 @@ public class AutoFillManagerStub extends BinderInvocationProxy {
     private static final String TAG = "AutoFillManagerStub";
 
     private static final String AUTO_FILL_NAME = "autofill";
+
     public AutoFillManagerStub() {
         super(IAutoFillManager.Stub.asInterface, AUTO_FILL_NAME);
     }
@@ -50,9 +53,15 @@ public class AutoFillManagerStub extends BinderInvocationProxy {
             public String getMethodName() {
                 return "startSession";
             }
+
             @Override
             public boolean beforeCall(Object who, Method method, Object... args) {
-                MethodParameterUtils.replaceLastAppPkg(args);
+                if (Build.VERSION.SDK_INT >= 28) {
+                    ComponentName component = (ComponentName) args[8];
+                    args[8] = new ComponentName(getHostPkg(), component.getClassName());
+                } else {
+                    MethodParameterUtils.replaceLastAppPkg(args);
+                }
                 return super.beforeCall(who, method, args);
             }
         });
@@ -61,6 +70,7 @@ public class AutoFillManagerStub extends BinderInvocationProxy {
             public String getMethodName() {
                 return "updateOrRestartSession";
             }
+
             @Override
             public boolean beforeCall(Object who, Method method, Object... args) {
                 MethodParameterUtils.replaceLastAppPkg(args);
@@ -72,6 +82,7 @@ public class AutoFillManagerStub extends BinderInvocationProxy {
             public String getMethodName() {
                 return "isServiceEnabled";
             }
+
             @Override
             public boolean beforeCall(Object who, Method method, Object... args) {
                 MethodParameterUtils.replaceLastAppPkg(args);
