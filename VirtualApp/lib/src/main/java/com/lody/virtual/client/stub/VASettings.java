@@ -1,6 +1,7 @@
 package com.lody.virtual.client.stub;
 
 import com.lody.virtual.plugin.stub.PluginStubActivity;
+import com.lody.virtual.plugin.utils.PluginHandle;
 
 import java.util.Locale;
 
@@ -66,6 +67,10 @@ public class VASettings {
 
     public static String getStubAuthority(int index) {
         return String.format(Locale.ENGLISH, "%s%d", STUB_CP_AUTHORITY, index);
+    }
+
+    public static String getPluginStubAuthority(int index) {
+        return String.format(Locale.ENGLISH, "%s%d", STUB_CP_AUTHORITY, PluginHandle.fetchPluginIdFromVPid(index) + 50);
     }
 
     public static String getPluginAuthority(int index) {

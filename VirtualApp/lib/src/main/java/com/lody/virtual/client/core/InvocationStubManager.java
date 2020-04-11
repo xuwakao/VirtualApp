@@ -53,6 +53,7 @@ import com.lody.virtual.client.hook.proxies.wifi_scanner.WifiScannerStub;
 import com.lody.virtual.client.hook.proxies.window.WindowManagerStub;
 import com.lody.virtual.client.interfaces.IInjector;
 import com.lody.virtual.plugin.hook.delegate.PluginInstrumentation;
+import com.lody.virtual.plugin.hook.proxies.am.PluginActivityManagerStub;
 import com.lody.virtual.plugin.hook.proxies.am.PluginHCallbackStub;
 
 import java.util.HashMap;
@@ -112,7 +113,10 @@ public final class InvocationStubManager {
 
 	private void injectInternal() throws Throwable {
 		if (VirtualCore.get().isMainProcess()) {
+			addInjector(new PluginActivityManagerStub());
+			addInjector(new PackageManagerStub());
 			addInjector(PluginHCallbackStub.getDefault());
+			addInjector(new WindowManagerStub());//must
 			addInjector(new ContentServiceStub());
 			return;
 		}

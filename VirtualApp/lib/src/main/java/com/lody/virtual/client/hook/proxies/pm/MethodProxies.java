@@ -31,6 +31,8 @@ import com.lody.virtual.helper.collection.ArraySet;
 import com.lody.virtual.helper.compat.ParceledListSliceCompat;
 import com.lody.virtual.helper.utils.ArrayUtils;
 import com.lody.virtual.os.VUserHandle;
+import com.lody.virtual.plugin.PluginImpl;
+import com.lody.virtual.plugin.core.PluginCore;
 import com.lody.virtual.server.IPackageInstaller;
 import com.lody.virtual.server.pm.installer.SessionInfo;
 import com.lody.virtual.server.pm.installer.SessionParams;
@@ -70,7 +72,7 @@ class MethodProxies {
 
         @Override
         public boolean isEnable() {
-            return isAppProcess();
+            return isAppProcess() || isMainProcess();
         }
     }
 
@@ -89,7 +91,7 @@ class MethodProxies {
 
         @Override
         public boolean isEnable() {
-            return isAppProcess();
+            return isAppProcess() || isMainProcess();
         }
     }
 
@@ -172,7 +174,7 @@ class MethodProxies {
 
         @Override
         public boolean isEnable() {
-            return isAppProcess();
+            return isAppProcess()|| isMainProcess();
         }
     }
 
@@ -196,7 +198,7 @@ class MethodProxies {
 
         @Override
         public boolean isEnable() {
-            return isAppProcess();
+            return isAppProcess()|| isMainProcess();
         }
 
     }
@@ -235,7 +237,7 @@ class MethodProxies {
 
         @Override
         public boolean isEnable() {
-            return isAppProcess();
+            return isAppProcess()|| isMainProcess();
         }
     }
 
@@ -250,7 +252,7 @@ class MethodProxies {
 
         @Override
         public boolean isEnable() {
-            return isAppProcess();
+            return isAppProcess()|| isMainProcess();
         }
 
         @Override
@@ -366,7 +368,7 @@ class MethodProxies {
 
         @Override
         public boolean isEnable() {
-            return isAppProcess();
+            return isAppProcess()|| isMainProcess();
         }
 
     }
@@ -387,7 +389,7 @@ class MethodProxies {
 
         @Override
         public boolean isEnable() {
-            return isAppProcess();
+            return isAppProcess()|| isMainProcess();
         }
     }
 
@@ -468,7 +470,7 @@ class MethodProxies {
 
         @Override
         public boolean isEnable() {
-            return isAppProcess();
+            return isAppProcess()|| isMainProcess();
         }
     }
 
@@ -500,7 +502,7 @@ class MethodProxies {
 
         @Override
         public boolean isEnable() {
-            return isAppProcess();
+            return isAppProcess()|| isMainProcess();
         }
     }
 
@@ -551,7 +553,7 @@ class MethodProxies {
 
         @Override
         public boolean isEnable() {
-            return isAppProcess();
+            return isAppProcess()|| isMainProcess();
         }
     }
 
@@ -611,12 +613,14 @@ class MethodProxies {
 
         @Override
         public boolean isEnable() {
-            return isAppProcess();
+            return isAppProcess()|| isMainProcess();
         }
     }
 
 
     static final class GetPackageInfo extends MethodProxy {
+
+        private static final String TAG = "PackageManagerStub$GetPackageInfo";
 
         @Override
         public String getMethodName() {
@@ -632,6 +636,16 @@ class MethodProxies {
         public Object call(Object who, Method method, Object... args) throws Throwable {
             String pkg = (String) args[0];
             int flags = (int) args[1];
+            if(isMainProcess()) {
+                PluginImpl plugin = PluginCore.get().findPluginByPackage(pkg);
+                if(plugin == null)
+                    return method.invoke(who, args);
+                PackageInfo packageInfo = VPackageManager.get().getPackageInfo(pkg, flags, plugin.getUserId());
+                if (packageInfo != null) {
+                    return packageInfo;
+                }
+                return null;
+            }
             int userId = VUserHandle.myUserId();
             PackageInfo packageInfo = VPackageManager.get().getPackageInfo(pkg, flags, userId);
             if (packageInfo != null) {
@@ -679,7 +693,7 @@ class MethodProxies {
 
         @Override
         public boolean isEnable() {
-            return isAppProcess();
+            return isAppProcess()|| isMainProcess();
         }
     }
 
@@ -733,7 +747,7 @@ class MethodProxies {
 
         @Override
         public boolean isEnable() {
-            return isAppProcess();
+            return isAppProcess()|| isMainProcess();
         }
     }
 
@@ -772,7 +786,7 @@ class MethodProxies {
 
         @Override
         public boolean isEnable() {
-            return isAppProcess();
+            return isAppProcess()|| isMainProcess();
         }
     }
 
@@ -813,7 +827,7 @@ class MethodProxies {
 
         @Override
         public boolean isEnable() {
-            return isAppProcess();
+            return isAppProcess()|| isMainProcess();
         }
     }
 
@@ -961,6 +975,7 @@ class MethodProxies {
 
 
     static class GetApplicationInfo extends MethodProxy {
+        private static final String TAG = "PackageManagerStub$GetApplicationInfo";
 
         @Override
         public String getMethodName() {
@@ -971,8 +986,15 @@ class MethodProxies {
         public Object call(Object who, Method method, Object... args) throws Throwable {
             String pkg = (String) args[0];
             int flags = (int) args[1];
-            if (getHostPkg().equals(pkg)) {
-                return method.invoke(who, args);
+            if(isMainProcess()) {
+                PluginImpl plugin = PluginCore.get().findPluginByPackage(pkg);
+                if(plugin == null)
+                    return method.invoke(who, args);
+                ApplicationInfo info = VPackageManager.get().getApplicationInfo(pkg, flags, plugin.getUserId());
+                if (info != null) {
+                    return info;
+                }
+                return null;
             }
             int userId = VUserHandle.myUserId();
             ApplicationInfo info = VPackageManager.get().getApplicationInfo(pkg, flags, userId);
@@ -988,7 +1010,7 @@ class MethodProxies {
 
         @Override
         public boolean isEnable() {
-            return isAppProcess();
+            return isAppProcess() || isMainProcess();
         }
     }
 
@@ -1034,7 +1056,7 @@ class MethodProxies {
 
         @Override
         public boolean isEnable() {
-            return isAppProcess();
+            return isAppProcess()|| isMainProcess();
         }
     }
 
@@ -1146,7 +1168,7 @@ class MethodProxies {
 
         @Override
         public boolean isEnable() {
-            return isAppProcess();
+            return isAppProcess() || isMainProcess();
         }
     }
 
@@ -1183,7 +1205,7 @@ class MethodProxies {
 
         @Override
         public boolean isEnable() {
-            return isAppProcess();
+            return isAppProcess() || isMainProcess();
         }
     }
 
@@ -1224,7 +1246,7 @@ class MethodProxies {
 
         @Override
         public boolean isEnable() {
-            return isAppProcess();
+            return isAppProcess() || isMainProcess();
         }
     }
 

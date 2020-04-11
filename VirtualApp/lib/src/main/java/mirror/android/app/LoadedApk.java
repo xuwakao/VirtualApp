@@ -10,6 +10,7 @@ import android.content.Context;
 import android.content.IIntentReceiver;
 import android.content.ServiceConnection;
 import android.content.pm.ApplicationInfo;
+import android.content.res.Resources;
 import android.os.Handler;
 import android.os.IInterface;
 
@@ -35,6 +36,7 @@ public class LoadedApk {
     public static RefBoolean mSecurityViolation;
     public static RefBoolean mIncludeCode;
     public static RefBoolean mRegisterPackage;
+    public static RefObject<Resources> mResources;
 
     public static class ReceiverDispatcher {
         public static Class Class = RefClass.load(ReceiverDispatcher.class, "android.app.LoadedApk$ReceiverDispatcher");

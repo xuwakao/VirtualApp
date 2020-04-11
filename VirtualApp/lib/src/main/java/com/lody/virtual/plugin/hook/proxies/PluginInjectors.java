@@ -3,6 +3,7 @@ package com.lody.virtual.plugin.hook.proxies;
 import android.os.Build;
 
 import com.lody.virtual.client.core.InvocationStubManager;
+import com.lody.virtual.client.hook.proxies.appops.AppOpsManagerStub;
 import com.lody.virtual.client.hook.proxies.job.JobServiceStub;
 import com.lody.virtual.client.hook.proxies.notification.NotificationManagerStub;
 import com.lody.virtual.client.hook.proxies.pm.PackageManagerStub;
@@ -31,10 +32,8 @@ public class PluginInjectors implements IInjector {
 
     public PluginInjectors() {
         addInjector(new PluginClassLoaderStub());
-        addInjector(new PluginActivityManagerStub());
         addInjector(new NotificationManagerStub());
-        addInjector(new PackageManagerStub());
-        addInjector(new WindowManagerStub());
+
         if (Build.VERSION.SDK_INT >= JELLY_BEAN_MR2) {
 //            addInjector(new VibratorStub());
 //            addInjector(new WifiManagerStub());

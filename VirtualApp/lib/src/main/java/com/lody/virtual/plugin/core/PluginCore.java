@@ -1,12 +1,17 @@
 package com.lody.virtual.plugin.core;
 
 import android.app.ActivityManager;
+import android.content.ComponentName;
+import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.os.Process;
 
 import com.lody.virtual.helper.collection.SparseArray;
+import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.plugin.PluginImpl;
+import com.lody.virtual.plugin.fixer.PluginMetaBundle;
 import com.lody.virtual.plugin.hook.proxies.classloader.PluginClassLoader;
+import com.lody.virtual.plugin.utils.PluginHandle;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
@@ -38,6 +43,38 @@ public class PluginCore {
         synchronized (mPlugins) {
             mPlugins.put(vpid, client);
         }
+    }
+
+    public PluginImpl findPlugin(Intent intent) {
+        synchronized (mPlugins) {
+            int pluginId = PluginMetaBundle.getIntentPluginId(intent);
+            if (PluginHandle.isPluginVPid(pluginId)) {
+                return getPlugin(pluginId);
+            }
+            String packageName = intent.getPackage();
+            ComponentName component = intent.getComponent();
+            if (packageName == null) {
+                if (component != null) {
+                    packageName = component.getPackageName();
+                } else {
+                    VLog.w(TAG, "intent has no package info." + VLog.getStackTraceString(new Exception()));
+                    return null;
+                }
+            }
+            return findPluginByPackage(packageName);
+        }
+    }
+
+    public PluginImpl findPluginByPackage(String packageName) {
+        synchronized (mPlugins) {
+            for (int i = 0; i < mPlugins.size(); i++) {
+                PluginImpl plugin = mPlugins.valueAt(i);
+                if (plugin.getApplicationInfo().packageName.equals(packageName)) {
+                    return plugin;
+                }
+            }
+        }
+        return null;
     }
 
     /**
@@ -122,5 +159,9 @@ public class PluginCore {
 
     public void setLatestCallRunningProcessPlugin(int pluginId) {
         mCallerContext.setLatestCallRunningProcessPlugin(pluginId);
+    }
+
+    public int getLatestCallRunningProcessPlugin() {
+        return mCallerContext.getLatestCallRunningProcessPlugin();
     }
 }

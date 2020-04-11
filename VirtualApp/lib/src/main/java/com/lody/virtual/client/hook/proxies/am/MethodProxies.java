@@ -61,6 +61,7 @@ import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.os.VUserInfo;
+import com.lody.virtual.plugin.fixer.PluginMetaBundle;
 import com.lody.virtual.remote.AppTaskInfo;
 import com.lody.virtual.server.interfaces.IAppRequestListener;
 
@@ -250,7 +251,7 @@ class MethodProxies {
             MethodParameterUtils.replaceLastAppPkg(args);
             Intent service = (Intent) args[0];
             String resolvedType = (String) args[1];
-            return VActivityManager.get().peekService(service, resolvedType);
+            return VActivityManager.get().peekService(service, resolvedType, VUserHandle.myUserId());
         }
 
         @Override
@@ -694,7 +695,7 @@ class MethodProxies {
         public Object call(Object who, Method method, Object... args) throws Throwable {
             int maxNum = (int) args[0];
             int flags = (int) args[1];
-            return VActivityManager.get().getServices(maxNum, flags).getList();
+            return VActivityManager.get().getServices(maxNum, flags,VUserHandle.myUserId()).getList();
         }
 
         @Override
@@ -761,7 +762,7 @@ class MethodProxies {
                 Reflect.on(notification).call("setSmallIcon", icon);
             }
 
-            VActivityManager.get().setServiceForeground(component, token, id, notification, removeNotification);
+            VActivityManager.get().setServiceForeground(component, token, id, notification, removeNotification, VUserHandle.myUserId());
             return 0;
         }
 
@@ -1334,7 +1335,7 @@ class MethodProxies {
                 }
             }
             if (componentName != null && !getHostPkg().equals(componentName.getPackageName())) {
-                return VActivityManager.get().stopService(caller, intent, resolvedType);
+                return VActivityManager.get().stopService(caller, intent, resolvedType, VUserHandle.myUserId());
             }
             return method.invoke(who, args);
         }
@@ -1347,6 +1348,7 @@ class MethodProxies {
 
 
     static class GetContentProvider extends MethodProxy {
+        private static final String TAG = "GetContentProvider";
 
         @Override
         public String getMethodName() {
@@ -1360,11 +1362,19 @@ class MethodProxies {
             int userId = VUserHandle.myUserId();
             ProviderInfo info = VPackageManager.get().resolveContentProvider(name, 0, userId);
             if (info != null && info.enabled && isAppPkg(info.packageName)) {
-                int targetVPid = VActivityManager.get().initProcess(info.packageName, info.processName, userId);
+                int targetVPid = -1;
+                String stubAuthority;
+                if(!PluginMetaBundle.isPlugin(info)) {
+                    targetVPid = VActivityManager.get().initProcess(info.packageName, info.processName, userId);
+                    stubAuthority = VASettings.getStubAuthority(targetVPid);
+                }else{
+                    targetVPid = VActivityManager.get().getVPidByPackage(info.processName, VClientImpl.get().getVUid());
+                    stubAuthority = VASettings.getPluginStubAuthority(targetVPid);
+                }
                 if (targetVPid == -1) {
                     return null;
                 }
-                args[nameIdx] = VASettings.getStubAuthority(targetVPid);
+                args[nameIdx] = stubAuthority;
                 Object holder = method.invoke(who, args);
                 if (holder == null) {
                     return null;
@@ -1372,6 +1382,9 @@ class MethodProxies {
                 if (BuildCompat.isOreo()) {
                     IInterface provider = ContentProviderHolderOreo.provider.get(holder);
                     if (provider != null) {
+                        if(PluginMetaBundle.isPlugin(info)) {
+                            PluginMetaBundle.putPluginIdToMeta(info, targetVPid);
+                        }
                         provider = VActivityManager.get().acquireProviderClient(userId, info);
                     }
                     ContentProviderHolderOreo.provider.set(holder, provider);
@@ -1380,6 +1393,9 @@ class MethodProxies {
                     IInterface provider = IActivityManager.ContentProviderHolder.provider.get(holder);
                     if (provider != null) {
                         provider = VActivityManager.get().acquireProviderClient(userId, info);
+                    }
+                    if(PluginMetaBundle.isPlugin(info)) {
+                        PluginMetaBundle.putPluginIdToMeta(info, targetVPid);
                     }
                     IActivityManager.ContentProviderHolder.provider.set(holder, provider);
                     IActivityManager.ContentProviderHolder.info.set(holder, info);

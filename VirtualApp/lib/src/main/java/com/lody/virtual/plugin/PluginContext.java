@@ -16,16 +16,21 @@
 
 package com.lody.virtual.plugin;
 
-import android.annotation.TargetApi;
 import android.app.Application;
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.IntentSender;
+import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.res.AssetManager;
 import android.content.res.Resources;
-import android.os.Build;
-import android.os.Process;
+import android.os.Bundle;
+import android.os.Handler;
 import android.os.UserHandle;
 import android.util.AttributeSet;
 import android.view.ContextThemeWrapper;
@@ -40,6 +45,7 @@ import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.os.VEnvironment;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.plugin.core.PluginCore;
+import com.lody.virtual.plugin.fixer.PluginMetaBundle;
 import com.lody.virtual.plugin.utils.PluginHandle;
 import com.lody.virtual.remote.InstalledAppInfo;
 
@@ -85,6 +91,7 @@ public class PluginContext extends ContextThemeWrapper {
     };
     private Application mApplication;
     private ContentResolver mNewContentResolver;
+    private Context mBaseContext;
 
     public PluginContext(Context base, int themeResId, ClassLoader cl, Resources r,
                          int pluginId, int userId, ApplicationInfo applicationInfo) {
@@ -100,42 +107,38 @@ public class PluginContext extends ContextThemeWrapper {
 
     public void setApplication(Application application) {
         mApplication = application;
-        installContentResolver();
+//        installContentResolver();
     }
 
-    @TargetApi(17)
     private void installContentResolver() {
-        if (Build.VERSION.SDK_INT >= 17) {
-            UserHandle myUserHandle = Process.myUserHandle();
-            UserHandle userHandle = mirror.android.os.UserHandle.of.call(PluginHandle.getPluginHandle(mPluginId, myUserHandle.hashCode()));
-            Class<?> clz = ContextImpl.ApplicationContentResolver.TYPE;
-            mNewContentResolver = Reflect.on(clz).create(this, VirtualCore.mainThread(), userHandle).get();
-        }
+        UserHandle userHandle = mirror.android.os.UserHandle.ctor.newInstance(PluginHandle.getHandleForPlugin(mPluginId));
+        Class<?> clz = ContextImpl.ApplicationContentResolver.TYPE;
+        mNewContentResolver = Reflect.on(clz).create(this, VirtualCore.mainThread(), userHandle).get();
     }
 
-    @Override
-    public ClassLoader getClassLoader() {
-        if (mNewClassLoader != null) {
-            return mNewClassLoader;
-        }
-        return super.getClassLoader();
-    }
-
-    @Override
-    public Resources getResources() {
-        if (mNewResources != null) {
-            return mNewResources;
-        }
-        return super.getResources();
-    }
-
-    @Override
-    public AssetManager getAssets() {
-        if (mNewResources != null) {
-            return mNewResources.getAssets();
-        }
-        return super.getAssets();
-    }
+//    @Override
+//    public ClassLoader getClassLoader() {
+//        if (mNewClassLoader != null) {
+//            return mNewClassLoader;
+//        }
+//        return super.getClassLoader();
+//    }
+//
+//    @Override
+//    public Resources getResources() {
+//        if (mNewResources != null) {
+//            return mNewResources;
+//        }
+//        return super.getResources();
+//    }
+//
+//    @Override
+//    public AssetManager getAssets() {
+//        if (mNewResources != null) {
+//            return mNewResources.getAssets();
+//        }
+//        return super.getAssets();
+//    }
 
     @Override
     public Object getSystemService(String name) {
@@ -421,128 +424,155 @@ public class PluginContext extends ContextThemeWrapper {
             throw ie;
         }
     }
-
-    @Override
-    public String getPackageName() {
-        return mApplicationInfo.packageName;
-    }
-
-    /**
-     * {@link #mApplication} is NULL when Plugin {@link Application#getApplicationContext()} in {@link Application#onCreate()}
-     *
-     * @return
-     */
-    @Override
-    public Context getApplicationContext() {
-        return mApplication == null ? this : mApplication;
-    }
-
-
-    //    @Override
-//    public void startActivity(Intent intent) {
-//        // HINT 只有插件Application才会走这里
-//        // 而Activity.startActivity系统最终会走startActivityForResult，不会走这儿
 //
-//        // 这里会被调用两次：
-//        // 第一次：获取各种信息，最终确认坑位，并走startActivity，再次回到这里
-//        // 第二次：判断要打开的是“坑位Activity”，则返回False，直接走super，后面的事情你们都懂的
-//        // 当然，如果在获取坑位信息时遇到任何情况（例如要打开的是宿主的Activity），则直接返回false，走super
-//        /*if (!Factory2.startActivity(this, intent)) {
-//            if (mContextInjector != null) {
-//                mContextInjector.startActivityBefore(intent);
-//            }
-//
-//            super.startActivity(intent);
-//
-//            if (mContextInjector != null) {
-//                mContextInjector.startActivityAfter(intent);
-//            }
-//        }*/
+//    @Override
+//    public String getPackageName() {
+//        return mApplicationInfo.packageName;
 //    }
 //
 //    @Override
-//    public void startActivity(Intent intent, Bundle options) {
-//        // HINT 保险起见，startActivity写两套相似逻辑
-//        // 具体见startActivity(intent)的描述（上面）
-//        /*if (!Factory2.startActivity(this, intent)) {
-//            if (mContextInjector != null) {
-//                mContextInjector.startActivityBefore(intent, options);
-//            }
+//    public Context getBaseContext() {
+////        Context baseContext = super.getBaseContext();
+//        return mBaseContext == null ? super.getBaseContext() : mBaseContext;
+//    }
 //
-//            super.startActivity(intent, options);
-//
-//            if (mContextInjector != null) {
-//                mContextInjector.startActivityAfter(intent, options);
-//            }
-//        }*/
+//    /**
+//     * {@link #mApplication} is NULL when Plugin {@link Application#getApplicationContext()} in {@link Application#onCreate()}
+//     *
+//     * @return
+//     */
+//    @Override
+//    public Context getApplicationContext() {
+//        return mApplication == null ? this : mApplication;
 //    }
 //
 //    @Override
-//    public ComponentName startService(Intent service) {
-//        if (mContextInjector != null) {
-//            mContextInjector.startServiceBefore(service);
-//        }
-//        try {
-//            return PluginServiceClient.startService(this, service, true);
-//        } catch (PluginClientHelper.ShouldCallSystem e) {
-//            // 若打开插件出错，则直接走系统逻辑
-//            return super.startService(service);
-//        } finally {
-//            if (mContextInjector != null) {
-//                mContextInjector.startServiceAfter(service);
-//            }
-//        }
+//    public String getPackageCodePath() {
+//        // 获取插件Apk的路径
+//        return mInstalledAppInfo.apkPath;
 //    }
 //
 //    @Override
-//    public boolean stopService(Intent name) {
-//        try {
-//            return PluginServiceClient.stopService(this, name, true);
-//        } catch (PluginClientHelper.ShouldCallSystem e) {
-//            // 若打开插件出错，则直接走系统逻辑
-//            return super.stopService(name);
-//        }
+//    public ApplicationInfo getApplicationInfo() {
+//        return mApplicationInfo;
 //    }
 //
 //    @Override
-//    public boolean bindService(Intent service, ServiceConnection conn, int flags) {
-//        try {
-//            return PluginServiceClient.bindService(this, service, conn, flags, true);
-//        } catch (PluginClientHelper.ShouldCallSystem e) {
-//            // 若打开插件出错，则直接走系统逻辑
-//            return super.bindService(service, conn, flags);
+//    public ContentResolver getContentResolver() {
+//        if (mNewContentResolver != null) {
+//            return mNewContentResolver;
 //        }
-//    }
-//
-//    @Override
-//    public void unbindService(ServiceConnection conn) {
-//        // 先走一遍系统的逻辑
-//        try {
-//            super.unbindService(conn);
-//        } catch (Throwable e) {
-//            // Ignore
-//        }
-//        // 再走插件的unbindService
-//        // NOTE 由于不应重新调用context.unbind命令，故传进去的是false
-//        PluginServiceClient.unbindService(this, conn, false);
+//        return super.getContentResolver();
 //    }
 
     @Override
-    public String getPackageCodePath() {
-        // 获取插件Apk的路径
-        return mInstalledAppInfo.apkPath;
+    public void startActivity(Intent intent, Bundle options) {
+        PluginMetaBundle.putIntentPluginId(intent, mPluginId);
+        super.startActivity(intent, options);
     }
 
     @Override
-    public ApplicationInfo getApplicationInfo() {
-        return mApplicationInfo;
+    public void startActivity(Intent intent) {
+        PluginMetaBundle.putIntentPluginId(intent, mPluginId);
+        super.startActivity(intent);
     }
 
     @Override
-    public ContentResolver getContentResolver() {
-        if (mNewContentResolver != null) {
-            return mNewContentResolver;
+    public void startActivities(Intent[] intents) {
+        for (Intent intent : intents)
+            PluginMetaBundle.putIntentPluginId(intent, mPluginId);
+        super.startActivities(intents);
+    }
+
+    @Override
+    public void startActivities(Intent[] intents, Bundle options) {
+        for (Intent intent : intents) {
+            PluginMetaBundle.putIntentPluginId(intent, mPluginId);
         }
-        return super.getContentResolver();
+        super.startActivities(intents, options);
+    }
+
+    @Override
+    public void startIntentSender(IntentSender intent, Intent fillInIntent, int flagsMask, int flagsValues, int extraFlags) throws IntentSender.SendIntentException {
+        super.startIntentSender(intent, fillInIntent, flagsMask, flagsValues, extraFlags);
+    }
+
+    @Override
+    public void startIntentSender(IntentSender intent, Intent fillInIntent, int flagsMask, int flagsValues, int extraFlags, Bundle options) throws IntentSender.SendIntentException {
+        super.startIntentSender(intent, fillInIntent, flagsMask, flagsValues, extraFlags, options);
+    }
+
+    @Override
+    public Intent registerReceiver(BroadcastReceiver receiver, IntentFilter filter) {
+        return super.registerReceiver(receiver, filter);
+    }
+
+    @Override
+    public Intent registerReceiver(BroadcastReceiver receiver, IntentFilter filter, int flags) {
+        return super.registerReceiver(receiver, filter, flags);
+    }
+
+    @Override
+    public Intent registerReceiver(BroadcastReceiver receiver, IntentFilter filter, String broadcastPermission, Handler scheduler) {
+        return super.registerReceiver(receiver, filter, broadcastPermission, scheduler);
+    }
+
+    @Override
+    public Intent registerReceiver(BroadcastReceiver receiver, IntentFilter filter, String broadcastPermission, Handler scheduler, int flags) {
+        return super.registerReceiver(receiver, filter, broadcastPermission, scheduler, flags);
+    }
+
+    @Override
+    public void sendBroadcast(Intent intent) {
+        PluginMetaBundle.putIntentPluginId(intent, mPluginId);
+        super.sendBroadcast(intent);
+    }
+
+    @Override
+    public void sendBroadcast(Intent intent, String receiverPermission) {
+        PluginMetaBundle.putIntentPluginId(intent, mPluginId);
+        super.sendBroadcast(intent, receiverPermission);
+    }
+
+    @Override
+    public void sendOrderedBroadcast(Intent intent, String receiverPermission) {
+        PluginMetaBundle.putIntentPluginId(intent, mPluginId);
+        super.sendOrderedBroadcast(intent, receiverPermission);
+    }
+
+    @Override
+    public void sendOrderedBroadcast(Intent intent, String receiverPermission, BroadcastReceiver resultReceiver, Handler scheduler, int initialCode, String initialData, Bundle initialExtras) {
+        PluginMetaBundle.putIntentPluginId(intent, mPluginId);
+        super.sendOrderedBroadcast(intent, receiverPermission, resultReceiver, scheduler, initialCode, initialData, initialExtras);
+    }
+
+
+    @Override
+    public ComponentName startService(Intent service) {
+        PluginMetaBundle.putIntentPluginId(service, mPluginId);
+        return super.startService(service);
+    }
+
+    @Override
+    public ComponentName startForegroundService(Intent service) {
+        PluginMetaBundle.putIntentPluginId(service, mPluginId);
+        return super.startForegroundService(service);
+    }
+
+    @Override
+    public boolean stopService(Intent name) {
+        PluginMetaBundle.putIntentPluginId(name, mPluginId);
+        return super.stopService(name);
+    }
+
+    @Override
+    public boolean bindService(Intent service, ServiceConnection conn, int flags) {
+        PluginMetaBundle.putIntentPluginId(service, mPluginId);
+        return super.bindService(service, conn, flags);
+    }
+
+    @Override
+    public void unbindService(ServiceConnection conn) {
+        super.unbindService(conn);
     }
 }

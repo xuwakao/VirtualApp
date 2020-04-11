@@ -18,6 +18,7 @@ import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.plugin.PluginImpl;
 import com.lody.virtual.plugin.core.PluginCore;
 import com.lody.virtual.plugin.fixer.PluginMetaBundle;
+import com.lody.virtual.plugin.utils.PluginHandle;
 import com.lody.virtual.remote.StubActivityRecord;
 
 import java.util.Iterator;
@@ -109,8 +110,18 @@ public class PluginHCallbackStub implements Handler.Callback, IInjector {
                         return true;
                     }
                 } else if (CREATE_SERVICE == msg.what) {
-                    if (!handleCreateService(msg)) {
+                    /*if (!handleCreateService(msg)) {
                         return true;
+                    }*/
+                    Object data = msg.obj;
+                    ServiceInfo serviceInfo = ActivityThread.CreateServiceData.info.get(data);
+                    int pluginId = PluginMetaBundle.getPluginIdFromMeta(serviceInfo);
+                    if(PluginHandle.isPluginVPid(pluginId)) {
+                        PluginImpl plugin = PluginCore.get().getPlugin(pluginId);
+                        if (plugin != null && !plugin.isBound()) {
+                            VLog.e(TAG, "handleCreateService plugin not launched : " + serviceInfo);
+                            plugin.bindPluginApp(serviceInfo.packageName, serviceInfo.processName);
+                        }
                     }
                 } else if (SCHEDULE_CRASH == msg.what) {
                     // to avoid the exception send from System.
@@ -191,11 +202,12 @@ public class PluginHCallbackStub implements Handler.Callback, IInjector {
                                 return true;
                             }
 
-                            ComponentName caller = saveInstance.intent.getComponent();
+                            Intent intent = saveInstance.intent;
+                            ComponentName caller = saveInstance.caller;
                             IBinder token = Reflect.on(r).call("getActivityToken").get();
                             ActivityInfo info = saveInstance.info;
-
-                            PluginImpl plugin = PluginCore.get().getPlugin(saveInstance.pluginId);
+                            int pluginId = PluginMetaBundle.getIntentPluginId(intent);
+                            PluginImpl plugin = PluginCore.get().getPlugin(pluginId);
                             if (plugin == null) {
                                 VLog.e(TAG, "handleLaunchActivity2 plugin not launched : " + saveInstance);
                                 return true;
@@ -212,9 +224,13 @@ public class PluginHCallbackStub implements Handler.Callback, IInjector {
                                     token,
                                     false
                             );
+
                             VActivityManager.get().onActivityCreate(ComponentUtils.toComponentName(info),
-                                    caller, token, info, stubIntent, ComponentUtils.getTaskAffinity(info),
-                                    taskId, info.launchMode, info.flags, saveInstance.pluginId);
+                                    caller, token, info, intent, ComponentUtils.getTaskAffinity(info),
+                                    taskId, info.launchMode, info.flags);
+                            intent.setExtrasClassLoader(plugin.getPluginDexClassLoader());
+//                            Reflect.on(next).set("mIntent", intent);
+//                            Reflect.on(next).set("mInfo", info);
                             return true;
                         }
                     } catch (Exception e) {
@@ -236,8 +252,8 @@ public class PluginHCallbackStub implements Handler.Callback, IInjector {
         ComponentName caller = saveInstance.caller;
         IBinder token = ActivityThread.ActivityClientRecord.token.get(r);
         ActivityInfo info = saveInstance.info;
-
-        PluginImpl plugin = PluginCore.get().getPlugin(saveInstance.pluginId);
+        int pluginId = PluginMetaBundle.getIntentPluginId(intent);
+        PluginImpl plugin = PluginCore.get().getPlugin(pluginId);
         if (plugin == null) {
             VLog.e(TAG, "handleLaunchActivity plugin not launched : " + saveInstance);
             return true;
@@ -254,7 +270,9 @@ public class PluginHCallbackStub implements Handler.Callback, IInjector {
                 token,
                 false
         );
-        VActivityManager.get().onActivityCreate(ComponentUtils.toComponentName(info), caller, token, info, intent, ComponentUtils.getTaskAffinity(info), taskId, info.launchMode, info.flags, saveInstance.pluginId);
+
+        VActivityManager.get().onActivityCreate(ComponentUtils.toComponentName(info), caller, token, info, intent, ComponentUtils.getTaskAffinity(info), taskId, info.launchMode, info.flags);
+        intent.setExtrasClassLoader(plugin.getPluginDexClassLoader());
         return true;
     }
 

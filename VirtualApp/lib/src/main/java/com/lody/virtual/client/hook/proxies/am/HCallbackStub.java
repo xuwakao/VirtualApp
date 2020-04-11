@@ -163,7 +163,8 @@ public class HCallbackStub implements Handler.Callback, IInjector {
                                 return true;
                             }
 
-                            ComponentName caller = saveInstance.intent.getComponent();
+                            Intent intent = saveInstance.intent;
+                            ComponentName caller = saveInstance.caller;
                             IBinder token = Reflect.on(r).call("getActivityToken").get();
                             ActivityInfo info = saveInstance.info;
 
@@ -174,7 +175,7 @@ public class HCallbackStub implements Handler.Callback, IInjector {
                                     return true;
                                 }
                                 VActivityManager.get().processRestarted(info.packageName,
-                                        info.processName, saveInstance.userId, saveInstance.pluginId);
+                                        info.processName, saveInstance.userId);
                                 getH().sendMessageAtFrontOfQueue(Message.obtain(msg));
                                 return false;
                             }
@@ -192,15 +193,13 @@ public class HCallbackStub implements Handler.Callback, IInjector {
                                     false
                             );
                             VActivityManager.get().onActivityCreate(ComponentUtils.toComponentName(info),
-                                    caller, token, info, stubIntent, ComponentUtils.getTaskAffinity(info),
-                                    taskId, info.launchMode, info.flags, saveInstance.pluginId);
+                                    caller, token, info, intent, ComponentUtils.getTaskAffinity(info),
+                                    taskId, info.launchMode, info.flags);
                             ClassLoader appClassLoader = VClientImpl.get().getClassLoader(info.applicationInfo);
-                            stubIntent.setExtrasClassLoader(appClassLoader);
+                            intent.setExtrasClassLoader(appClassLoader);
 
-                            ComponentName componentName = Reflect.on(next).field("mIntent")
-                                    .field("mComponent").get();
-                            Reflect.on(next).set("mIntent", saveInstance.intent);
-                            Reflect.on(next).set("mInfo", saveInstance.info);
+                            Reflect.on(next).set("mIntent", intent);
+                            Reflect.on(next).set("mInfo", info);
                             return true;
                         }
                     } catch (Exception e) {
@@ -228,7 +227,7 @@ public class HCallbackStub implements Handler.Callback, IInjector {
             if (installedAppInfo == null) {
                 return true;
             }
-            VActivityManager.get().processRestarted(info.packageName, info.processName, saveInstance.userId, saveInstance.pluginId);
+            VActivityManager.get().processRestarted(info.packageName, info.processName, saveInstance.userId);
             getH().sendMessageAtFrontOfQueue(Message.obtain(msg));
             return false;
         }
@@ -242,7 +241,7 @@ public class HCallbackStub implements Handler.Callback, IInjector {
                 token,
                 false
         );
-        VActivityManager.get().onActivityCreate(ComponentUtils.toComponentName(info), caller, token, info, intent, ComponentUtils.getTaskAffinity(info), taskId, info.launchMode, info.flags, saveInstance.pluginId);
+        VActivityManager.get().onActivityCreate(ComponentUtils.toComponentName(info), caller, token, info, intent, ComponentUtils.getTaskAffinity(info), taskId, info.launchMode, info.flags);
         ClassLoader appClassLoader = VClientImpl.get().getClassLoader(info.applicationInfo);
         intent.setExtrasClassLoader(appClassLoader);
         ActivityThread.ActivityClientRecord.intent.set(r, intent);

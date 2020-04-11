@@ -310,10 +310,6 @@ public final class VUserHandle implements Parcelable {
         return getUserId(VClientImpl.get().getVUid());
     }
 
-    public static int myPluginUserId() {
-        return 0;
-    }
-
     /**
      * Write a VUserHandle to a Parcel, handling null pointers.  Must be
      * read with {@link #readFromParcel(Parcel)}.

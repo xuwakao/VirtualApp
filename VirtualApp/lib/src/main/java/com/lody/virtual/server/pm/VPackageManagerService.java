@@ -22,7 +22,11 @@ import com.lody.virtual.client.fixer.ComponentFixer;
 import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.compat.ObjectsCompat;
 import com.lody.virtual.os.VUserHandle;
+import com.lody.virtual.plugin.fixer.PluginMetaBundle;
+import com.lody.virtual.plugin.utils.PluginHandle;
 import com.lody.virtual.remote.VParceledListSlice;
+import com.lody.virtual.server.am.ProcessRecord;
+import com.lody.virtual.server.am.VActivityManagerService;
 import com.lody.virtual.server.interfaces.IPackageManager;
 import com.lody.virtual.server.pm.installer.VPackageInstallerService;
 import com.lody.virtual.server.pm.parser.PackageParserEx;
@@ -226,6 +230,9 @@ public class VPackageManagerService implements IPackageManager {
 
     @Override
     public int checkPermission(String permName, String pkgName, int userId) {
+        if(PluginHandle.isPluginVPid(userId)) {
+            userId = PluginHandle.fetchPluginIdFromVPid(userId);
+        }
         if ("android.permission.INTERACT_ACROSS_USERS".equals(permName)
                 || "android.permission.INTERACT_ACROSS_USERS_FULL".equals(permName)) {
             return PackageManager.PERMISSION_DENIED;
@@ -235,6 +242,9 @@ public class VPackageManagerService implements IPackageManager {
 
     @Override
     public PackageInfo getPackageInfo(String packageName, int flags, int userId) {
+        if(PluginHandle.isPluginVPid(userId)) {
+            userId = PluginHandle.fetchPluginIdFromVPid(userId);
+        }
         checkUserId(userId);
         synchronized (mPackages) {
             VPackage p = mPackages.get(packageName);
@@ -280,6 +290,9 @@ public class VPackageManagerService implements IPackageManager {
 
     @Override
     public ActivityInfo getActivityInfo(ComponentName component, int flags, int userId) {
+        if(PluginHandle.isPluginVPid(userId)) {
+            userId = PluginHandle.fetchPluginIdFromVPid(userId);
+        }
         checkUserId(userId);
         flags = updateFlagsNought(flags);
         synchronized (mPackages) {
@@ -316,6 +329,9 @@ public class VPackageManagerService implements IPackageManager {
 
     @Override
     public ActivityInfo getReceiverInfo(ComponentName component, int flags, int userId) {
+        if(PluginHandle.isPluginVPid(userId)) {
+            userId = PluginHandle.fetchPluginIdFromVPid(userId);
+        }
         checkUserId(userId);
         flags = updateFlagsNought(flags);
         synchronized (mPackages) {
@@ -335,6 +351,9 @@ public class VPackageManagerService implements IPackageManager {
 
     @Override
     public ServiceInfo getServiceInfo(ComponentName component, int flags, int userId) {
+        if(PluginHandle.isPluginVPid(userId)) {
+            userId = PluginHandle.fetchPluginIdFromVPid(userId);
+        }
         checkUserId(userId);
         flags = updateFlagsNought(flags);
         synchronized (mPackages) {
@@ -354,6 +373,9 @@ public class VPackageManagerService implements IPackageManager {
 
     @Override
     public ProviderInfo getProviderInfo(ComponentName component, int flags, int userId) {
+        if(PluginHandle.isPluginVPid(userId)) {
+            userId = PluginHandle.fetchPluginIdFromVPid(userId);
+        }
         checkUserId(userId);
         flags = updateFlagsNought(flags);
         synchronized (mPackages) {
@@ -372,6 +394,9 @@ public class VPackageManagerService implements IPackageManager {
 
     @Override
     public ResolveInfo resolveIntent(Intent intent, String resolvedType, int flags, int userId) {
+        if(PluginHandle.isPluginVPid(userId)) {
+            userId = PluginHandle.fetchPluginIdFromVPid(userId);
+        }
         checkUserId(userId);
         flags = updateFlagsNought(flags);
         List<ResolveInfo> query = queryIntentActivities(intent, resolvedType, flags, 0);
@@ -429,6 +454,9 @@ public class VPackageManagerService implements IPackageManager {
 
     @Override
     public List<ResolveInfo> queryIntentActivities(Intent intent, String resolvedType, int flags, int userId) {
+        if(PluginHandle.isPluginVPid(userId)) {
+            userId = PluginHandle.fetchPluginIdFromVPid(userId);
+        }
         checkUserId(userId);
         flags = updateFlagsNought(flags);
         ComponentName comp = intent.getComponent();
@@ -467,6 +495,9 @@ public class VPackageManagerService implements IPackageManager {
 
     @Override
     public List<ResolveInfo> queryIntentReceivers(Intent intent, String resolvedType, int flags, int userId) {
+        if(PluginHandle.isPluginVPid(userId)) {
+            userId = PluginHandle.fetchPluginIdFromVPid(userId);
+        }
         checkUserId(userId);
         flags = updateFlagsNought(flags);
         ComponentName comp = intent.getComponent();
@@ -505,6 +536,9 @@ public class VPackageManagerService implements IPackageManager {
 
     @Override
     public ResolveInfo resolveService(Intent intent, String resolvedType, int flags, int userId) {
+        if(PluginHandle.isPluginVPid(userId)) {
+            userId = PluginHandle.fetchPluginIdFromVPid(userId);
+        }
         checkUserId(userId);
         flags = updateFlagsNought(flags);
         List<ResolveInfo> query = queryIntentServices(intent, resolvedType, flags, userId);
@@ -520,6 +554,9 @@ public class VPackageManagerService implements IPackageManager {
 
     @Override
     public List<ResolveInfo> queryIntentServices(Intent intent, String resolvedType, int flags, int userId) {
+        if(PluginHandle.isPluginVPid(userId)) {
+            userId = PluginHandle.fetchPluginIdFromVPid(userId);
+        }
         checkUserId(userId);
         flags = updateFlagsNought(flags);
         ComponentName comp = intent.getComponent();
@@ -559,6 +596,9 @@ public class VPackageManagerService implements IPackageManager {
     @TargetApi(Build.VERSION_CODES.KITKAT)
     @Override
     public List<ResolveInfo> queryIntentContentProviders(Intent intent, String resolvedType, int flags, int userId) {
+        if(PluginHandle.isPluginVPid(userId)) {
+            userId = PluginHandle.fetchPluginIdFromVPid(userId);
+        }
         checkUserId(userId);
         flags = updateFlagsNought(flags);
         ComponentName comp = intent.getComponent();
@@ -596,7 +636,8 @@ public class VPackageManagerService implements IPackageManager {
 
     @Override
     public VParceledListSlice<ProviderInfo> queryContentProviders(String processName, int vuid, int flags) {
-        int userId = VUserHandle.getUserId(vuid);
+        ProcessRecord processLocked = VActivityManagerService.get().findProcessLocked(processName, vuid);
+        int userId = processLocked == null ? VUserHandle.getUserId(vuid) : VUserHandle.getUserId(processLocked.vuid);
         checkUserId(userId);
         flags = updateFlagsNought(flags);
         ArrayList<ProviderInfo> finalList = new ArrayList<>(3);
@@ -618,6 +659,9 @@ public class VPackageManagerService implements IPackageManager {
 
     @Override
     public VParceledListSlice<PackageInfo> getInstalledPackages(int flags, int userId) {
+        if(PluginHandle.isPluginVPid(userId)) {
+            userId = PluginHandle.fetchPluginIdFromVPid(userId);
+        }
         checkUserId(userId);
         ArrayList<PackageInfo> pkgList = new ArrayList<>(mPackages.size());
         synchronized (mPackages) {
@@ -634,6 +678,9 @@ public class VPackageManagerService implements IPackageManager {
 
     @Override
     public VParceledListSlice<ApplicationInfo> getInstalledApplications(int flags, int userId) {
+        if(PluginHandle.isPluginVPid(userId)) {
+            userId = PluginHandle.fetchPluginIdFromVPid(userId);
+        }
         checkUserId(userId);
         flags = updateFlagsNought(flags);
         ArrayList<ApplicationInfo> list = new ArrayList<>(mPackages.size());
@@ -690,6 +737,9 @@ public class VPackageManagerService implements IPackageManager {
 
     @Override
     public ProviderInfo resolveContentProvider(String name, int flags, int userId) {
+        if(PluginHandle.isPluginVPid(userId)) {
+            userId = PluginHandle.fetchPluginIdFromVPid(userId);
+        }
         checkUserId(userId);
         flags = updateFlagsNought(flags);
         synchronized (mPackages) {
@@ -701,6 +751,7 @@ public class VPackageManagerService implements IPackageManager {
                     VPackage p = mPackages.get(providerInfo.packageName);
                     PackageSetting settings = (PackageSetting) p.mExtras;
                     ComponentFixer.fixComponentInfo(settings, providerInfo, userId);
+                    PluginMetaBundle.bePlugin(providerInfo, settings.isPlugin(userId));
                     return providerInfo;
                 }
             }
@@ -710,6 +761,9 @@ public class VPackageManagerService implements IPackageManager {
 
     @Override
     public ApplicationInfo getApplicationInfo(String packageName, int flags, int userId) {
+        if(PluginHandle.isPluginVPid(userId)) {
+            userId = PluginHandle.fetchPluginIdFromVPid(userId);
+        }
         checkUserId(userId);
         flags = updateFlagsNought(flags);
         synchronized (mPackages) {
@@ -740,6 +794,9 @@ public class VPackageManagerService implements IPackageManager {
 
     @Override
     public int getPackageUid(String packageName, int userId) {
+        if(PluginHandle.isPluginVPid(userId)) {
+            userId = PluginHandle.fetchPluginIdFromVPid(userId);
+        }
         checkUserId(userId);
         synchronized (mPackages) {
             VPackage p = mPackages.get(packageName);

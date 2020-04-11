@@ -42,8 +42,8 @@ import com.lody.virtual.helper.compat.IApplicationThreadCompat;
 import com.lody.virtual.helper.utils.ComponentUtils;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VUserHandle;
-import com.lody.virtual.plugin.IPluginClient;
 import com.lody.virtual.plugin.fixer.PluginMetaBundle;
+import com.lody.virtual.plugin.utils.PluginHandle;
 import com.lody.virtual.remote.AppTaskInfo;
 import com.lody.virtual.remote.BadgerInfo;
 import com.lody.virtual.remote.PendingIntentData;
@@ -88,13 +88,6 @@ public class VActivityManagerService implements IActivityManager {
             .getSystemService(Context.ACTIVITY_SERVICE);
     private NotificationManager nm = (NotificationManager) VirtualCore.get().getContext()
             .getSystemService(Context.NOTIFICATION_SERVICE);
-
-
-    /**
-     * Plugin records
-     */
-    private final SparseArray<ProcessRecord> mPluginPidsSelfLocked = new SparseArray<ProcessRecord>();
-    private final ProcessMap<ProcessRecord> mPluginNames = new ProcessMap<ProcessRecord>();
 
     public static VActivityManagerService get() {
         return sService.get();
@@ -187,9 +180,13 @@ public class VActivityManagerService implements IActivityManager {
     }
 
     @Override
-    public void onActivityCreated(ComponentName component, ComponentName caller, IBinder token, Intent intent, String affinity, int taskId, int launchMode, int flags, int pluginId) {
+    public void onActivityCreated(ComponentName component, ComponentName caller, IBinder token, Intent intent, String affinity, int taskId, int launchMode, int flags) {
         int pid = Binder.getCallingPid();
-        ProcessRecord targetApp = findProcessLocked(pid, pluginId);
+        int vpid = PluginMetaBundle.getIntentPluginId(intent);
+        if (PluginHandle.isPluginVPid(vpid)) {
+            pid = vpid;
+        }
+        ProcessRecord targetApp = findProcessLocked(pid);
         if (targetApp != null) {
             mMainStack.onActivityCreated(targetApp, component, caller, token, intent, affinity, taskId, launchMode, flags);
         }
@@ -201,8 +198,8 @@ public class VActivityManagerService implements IActivityManager {
     }
 
     @Override
-    public boolean onActivityDestroyed(int userId, IBinder token) {
-        ActivityRecord r = mMainStack.onActivityDestroyed(userId, token);
+    public boolean onActivityDestroyed(IBinder token) {
+        ActivityRecord r = mMainStack.onActivityDestroyed(token);
         return r != null;
     }
 
@@ -212,13 +209,13 @@ public class VActivityManagerService implements IActivityManager {
     }
 
     @Override
-    public String getPackageForToken(int userId, IBinder token) {
-        return mMainStack.getPackageForToken(userId, token);
+    public String getPackageForToken(IBinder token) {
+        return mMainStack.getPackageForToken(token);
     }
 
     @Override
-    public ComponentName getActivityClassForToken(int userId, IBinder token) {
-        return mMainStack.getActivityClassForToken(userId, token);
+    public ComponentName getActivityClassForToken(IBinder token) {
+        return mMainStack.getActivityClassForToken(token);
     }
 
 
@@ -239,8 +236,13 @@ public class VActivityManagerService implements IActivityManager {
     @Override
     public IBinder acquireProviderClient(int userId, ProviderInfo info) {
         ProcessRecord callerApp;
+        int pid = getCallingPid();
+        int vpid = PluginMetaBundle.getPluginIdFromMeta(info);
+        if (PluginHandle.isPluginVPid(vpid)) {
+            pid = vpid;
+        }
         synchronized (mPidsSelfLocked) {
-            callerApp = findProcessLocked(getCallingPid());
+            callerApp = findProcessLocked(pid);
         }
         if (callerApp == null) {
             throw new SecurityException("Who are you?");
@@ -261,13 +263,13 @@ public class VActivityManagerService implements IActivityManager {
     }
 
     @Override
-    public ComponentName getCallingActivity(int userId, IBinder token) {
-        return mMainStack.getCallingActivity(userId, token);
+    public ComponentName getCallingActivity(IBinder token) {
+        return mMainStack.getCallingActivity(token);
     }
 
     @Override
-    public String getCallingPackage(int userId, IBinder token) {
-        return mMainStack.getCallingPackage(userId, token);
+    public String getCallingPackage(IBinder token) {
+        return mMainStack.getCallingPackage(token);
     }
 
     private void addRecord(ServiceRecord r) {
@@ -370,7 +372,7 @@ public class VActivityManagerService implements IActivityManager {
     }
 
     @Override
-    public boolean stopServiceToken(ComponentName className, IBinder token, int startId, int userId) {
+    public boolean stopServiceToken(ComponentName className, IBinder token, int startId) {
         synchronized (this) {
             ServiceRecord r = (ServiceRecord) token;
             if (r != null && (r.startId == startId || startId == -1)) {
@@ -458,7 +460,7 @@ public class VActivityManagerService implements IActivityManager {
 
 
     @Override
-    public boolean unbindService(IServiceConnection connection, int userId) {
+    public boolean unbindService(IServiceConnection connection) {
         synchronized (this) {
             ServiceRecord r = findRecordLocked(connection);
             if (r == null) {
@@ -492,7 +494,7 @@ public class VActivityManagerService implements IActivityManager {
     }
 
     @Override
-    public void unbindFinished(IBinder token, Intent service, boolean doRebind, int userId) {
+    public void unbindFinished(IBinder token, Intent service, boolean doRebind) {
         synchronized (this) {
             ServiceRecord r = (ServiceRecord) token;
             if (r != null) {
@@ -512,7 +514,7 @@ public class VActivityManagerService implements IActivityManager {
 
 
     @Override
-    public void serviceDoneExecuting(IBinder token, int type, int startId, int res, int userId) {
+    public void serviceDoneExecuting(IBinder token, int type, int startId, int res) {
         synchronized (this) {
             ServiceRecord r = (ServiceRecord) token;
             if (r == null) {
@@ -543,7 +545,7 @@ public class VActivityManagerService implements IActivityManager {
     }
 
     @Override
-    public void publishService(IBinder token, Intent intent, IBinder service, int userId) {
+    public void publishService(IBinder token, Intent intent, IBinder service) {
         synchronized (this) {
             ServiceRecord r = (ServiceRecord) token;
             if (r != null) {
@@ -604,21 +606,25 @@ public class VActivityManagerService implements IActivityManager {
                                      boolean removeNotification, int userId) {
         ServiceRecord r = (ServiceRecord) token;
         if (r != null) {
+            String packageName = r.serviceInfo.packageName;
+            if (PluginHandle.isPluginVPid(PluginMetaBundle.getPluginIdFromMeta(r.serviceInfo))) {
+                packageName = VirtualCore.get().getHostPkg();
+            }
             if (id != 0) {
                 if (notification == null) {
                     throw new IllegalArgumentException("null notification");
                 }
                 if (r.foregroundId != id) {
                     if (r.foregroundId != 0) {
-                        cancelNotification(userId, r.foregroundId, r.serviceInfo.packageName);
+                        cancelNotification(userId, r.foregroundId, packageName);
                     }
                     r.foregroundId = id;
                 }
                 r.foregroundNoti = notification;
-                postNotification(userId, id, r.serviceInfo.packageName, notification);
+                postNotification(userId, id, packageName, notification);
             } else {
                 if (removeNotification) {
-                    cancelNotification(userId, r.foregroundId, r.serviceInfo.packageName);
+                    cancelNotification(userId, r.foregroundId, packageName);
                     r.foregroundId = 0;
                     r.foregroundNoti = null;
                 }
@@ -645,7 +651,7 @@ public class VActivityManagerService implements IActivityManager {
     }
 
     @Override
-    public void processRestarted(String packageName, String processName, int userId, int pluginId) {
+    public void processRestarted(String packageName, String processName, int userId) {
         int callingPid = getCallingPid();
         int appId = VAppManagerService.get().getAppId(packageName);
         int uid = VUserHandle.getUid(userId, appId);
@@ -657,7 +663,7 @@ public class VActivityManagerService implements IActivityManager {
                 String stubProcessName = getProcessName(callingPid);
                 int vpid = parseVPid(stubProcessName);
                 if (vpid != -1) {
-                    performStartProcessLocked(uid, vpid, appInfo, processName, pluginId);
+                    performStartProcessLocked(uid, vpid, appInfo, processName);
                 }
             }
         }
@@ -683,53 +689,6 @@ public class VActivityManagerService implements IActivityManager {
             }
         }
         return null;
-    }
-
-    private void attachPlugin(int pid, final IBinder clientBinder) {
-        final IPluginClient client = IPluginClient.Stub.asInterface(clientBinder);
-        if (client == null) {
-            return;
-        }
-        IInterface thread = null;
-        try {
-            thread = ApplicationThreadCompat.asInterface(client.getAppThread());
-        } catch (RemoteException e) {
-            // process has dead
-        }
-        if (thread == null) {
-            return;
-        }
-        ProcessRecord app = null;
-        try {
-            IBinder token = client.getToken();
-            if (token instanceof ProcessRecord) {
-                app = (ProcessRecord) token;
-            }
-        } catch (RemoteException e) {
-            // process has dead
-        }
-        if (app == null) {
-            return;
-        }
-        try {
-            final ProcessRecord record = app;
-            clientBinder.linkToDeath(new IBinder.DeathRecipient() {
-                @Override
-                public void binderDied() {
-                    clientBinder.unlinkToDeath(this, 0);
-                    onProcessDead(record);
-                }
-            }, 0);
-        } catch (RemoteException e) {
-            e.printStackTrace();
-        }
-        app.pluginClient = client;
-        app.appThread = thread;
-        app.pid = pid;
-        synchronized (mProcessNames) {
-            mPluginNames.put(app.processName, app.vuid, app);
-            mPluginPidsSelfLocked.put(app.vpid, app);
-        }
     }
 
     private void attachClient(int pid, final IBinder clientBinder) {
@@ -813,34 +772,6 @@ public class VActivityManagerService implements IActivityManager {
             return null;
         }
 
-        while (ps.isPlugin(userId)) {
-            if (!processName.equals(packageName)) {
-                VLog.d(TAG, "plugin child process");
-                break;
-            }
-
-            if (!ps.isLaunched(userId)) {
-                sendFirstLaunchBroadcast(ps, userId);
-                ps.setLaunched(userId, true);
-                VAppManagerService.get().savePersistenceData();
-            }
-
-            int uid = VUserHandle.getUid(userId, ps.appId);
-            ProcessRecord app = mPluginNames.get(processName, uid);
-            if (app != null && app.pluginClient.asBinder().isBinderAlive()) {
-                return app;
-            }
-            int vpid = queryFreeStubPluginLocked();
-            if (vpid == -1) {
-                return null;
-            }
-            app = performStartPluginLocked(uid, vpid, info, processName);
-            if (app != null) {
-                app.pkgList.add(info.packageName);
-            }
-            return app;
-        }
-
         if (!ps.isLaunched(userId)) {
             sendFirstLaunchBroadcast(ps, userId);
             ps.setLaunched(userId, true);
@@ -852,16 +783,15 @@ public class VActivityManagerService implements IActivityManager {
             return app;
         }
         int vpid = queryFreeStubProcessLocked();
+        if ((ps.isPlugin(userId) && info.processName.equals(processName))) {
+            //plugin Main UI thread
+            vpid = PluginHandle.genVPidForPlugin(vpid);
+        }
         if (vpid == -1) {
             return null;
         }
-        int pluginId = -1;
-        /*if (ps.isPlugin(userId)) {
-            pluginId = queryFreeStubPluginLocked();
-            if (pluginId == -1)
-                return null;
-        }*/
-        app = performStartProcessLocked(uid, vpid, info, processName, pluginId);
+
+        app = performStartProcessLocked(uid, vpid, info, processName);
         if (app != null) {
             app.pkgList.add(info.packageName);
         }
@@ -888,7 +818,29 @@ public class VActivityManagerService implements IActivityManager {
         return Process.myUid();
     }
 
-    private ProcessRecord performStartProcessLocked(int vuid, int vpid, ApplicationInfo info, String processName, int pluginId) {
+    @Override
+    public int getUidByPluginId(int vpid) {
+        synchronized (mPidsSelfLocked) {
+            ProcessRecord r = findProcessLocked(vpid);
+            if (r != null) {
+                return r.vuid;
+            }
+        }
+        return Process.myUid();
+    }
+
+    @Override
+    public int getVPidByPackage(String processName, int uid) {
+        synchronized (mProcessNames) {
+            ProcessRecord processRecord = mProcessNames.get(processName, uid);
+            if(processRecord != null) {
+                return processRecord.vpid;
+            }
+        }
+        return -1;
+    }
+
+    private ProcessRecord performStartProcessLocked(int vuid, int vpid, ApplicationInfo info, String processName) {
         ProcessRecord app = new ProcessRecord(info, processName, vuid, vpid);
         Bundle extras = new Bundle();
         BundleCompat.putBinder(extras, "_VA_|_binder_", app);
@@ -896,41 +848,34 @@ public class VActivityManagerService implements IActivityManager {
         extras.putInt("_VA_|_vpid_", vpid);
         extras.putString("_VA_|_process_", processName);
         extras.putString("_VA_|_pkg_", info.packageName);
-        Bundle res = ProviderCall.call(VASettings.getStubAuthority(vpid), "_VA_|_init_process_", null, extras);
+        String stubAuthority;
+        if (PluginHandle.isPluginVPid(vpid)) {
+            stubAuthority = VASettings.getPluginStubAuthority(vpid);
+        } else {
+            stubAuthority = VASettings.getStubAuthority(vpid);
+        }
+        Bundle res = ProviderCall.call(stubAuthority, "_VA_|_init_process_", null, extras);
         if (res == null) {
             return null;
         }
         int pid = res.getInt("_VA_|_pid_");
+        if (PluginHandle.isPluginVPid(vpid)) {
+            pid = vpid;
+        }
         IBinder clientBinder = BundleCompat.getBinder(res, "_VA_|_client_");
         attachClient(pid, clientBinder);
         return app;
     }
 
-    private ProcessRecord performStartPluginLocked(int vuid, int vpid, ApplicationInfo info, String processName) {
-        ProcessRecord app = new ProcessRecord(info, processName, vuid, vpid);
-        Bundle extras = new Bundle();
-        BundleCompat.putBinder(extras, "_VA_|_binder_", app);
-        extras.putInt("_VA_|_vuid_", vuid);
-        extras.putInt("_VA_|_vpid_", vpid);
-        extras.putString("_VA_|_process_", processName);
-        extras.putString("_VA_|_pkg_", info.packageName);
-        Bundle res = ProviderCall.call(VASettings.getPluginAuthority(vpid), "_VA_|_init_plugin_", null, extras);
-        if (res == null) {
-            return null;
-        }
-        int pid = res.getInt("_VA_|_pid_");
-        IBinder clientBinder = BundleCompat.getBinder(res, "_VA_|_client_");
-        attachPlugin(pid, clientBinder);
-        return app;
-    }
-
     private int queryFreeStubProcessLocked() {
+        int result = -1;
         for (int vpid = 0; vpid < VASettings.STUB_COUNT; vpid++) {
             int N = mPidsSelfLocked.size();
             boolean using = false;
             while (N-- > 0) {
                 ProcessRecord r = mPidsSelfLocked.valueAt(N);
-                if (r.vpid == vpid) {
+                if (r.vpid == vpid ||
+                        PluginHandle.fetchPluginIdFromVPid(r.vpid) == vpid) {
                     using = true;
                     break;
                 }
@@ -938,28 +883,10 @@ public class VActivityManagerService implements IActivityManager {
             if (using) {
                 continue;
             }
-            return vpid;
+            result = vpid;
+            break;
         }
-        return -1;
-    }
-
-    private int queryFreeStubPluginLocked() {
-        for (int vpid = 0; vpid < VASettings.STUB_COUNT; vpid++) {
-            int N = mPluginPidsSelfLocked.size();
-            boolean using = false;
-            while (N-- > 0) {
-                ProcessRecord r = mPluginPidsSelfLocked.valueAt(N);
-                if (r.vpid == vpid) {
-                    using = true;
-                    break;
-                }
-            }
-            if (using) {
-                continue;
-            }
-            return vpid;
-        }
-        return -1;
+        return result;
     }
 
     @Override
@@ -1001,7 +928,8 @@ public class VActivityManagerService implements IActivityManager {
         synchronized (mPidsSelfLocked) {
             for (int i = 0; i < mPidsSelfLocked.size(); i++) {
                 ProcessRecord r = mPidsSelfLocked.valueAt(i);
-                killProcess(r.pid);
+                if (!PluginHandle.isPluginVPid(r.pid))
+                    killProcess(r.pid);
             }
         }
     }
@@ -1021,7 +949,8 @@ public class VActivityManagerService implements IActivityManager {
                         }
                     }
                     if (r.pkgList.contains(pkg)) {
-                        killProcess(r.pid);
+                        if (!PluginHandle.isPluginVPid(r.pid))
+                            killProcess(r.pid);
                     }
                 }
             }
@@ -1087,9 +1016,9 @@ public class VActivityManagerService implements IActivityManager {
     }
 
     @Override
-    public void appDoneExecuting(int pluginId) {
-        synchronized (mPluginPidsSelfLocked) {
-            ProcessRecord r = mPluginPidsSelfLocked.get(pluginId);
+    public void appDoneExecuting(int vpid) {
+        synchronized (mPidsSelfLocked) {
+            ProcessRecord r = mPidsSelfLocked.get(vpid);
             if (r != null) {
                 r.doneExecuting = true;
                 r.lock.open();
@@ -1103,13 +1032,6 @@ public class VActivityManagerService implements IActivityManager {
      * @param pid pid
      */
     public ProcessRecord findProcessLocked(int pid) {
-        return mPidsSelfLocked.get(pid);
-    }
-
-    public ProcessRecord findProcessLocked(int pid, int pluginId) {
-        if (pluginId >= 0) {
-            return mPluginPidsSelfLocked.get(pluginId);
-        }
         return mPidsSelfLocked.get(pid);
     }
 

@@ -19,6 +19,8 @@ import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.utils.ArrayUtils;
 import com.lody.virtual.helper.utils.ClassUtils;
 import com.lody.virtual.helper.utils.ComponentUtils;
+import com.lody.virtual.plugin.fixer.PluginMetaBundle;
+import com.lody.virtual.plugin.utils.PluginHandle;
 import com.lody.virtual.remote.AppTaskInfo;
 import com.lody.virtual.remote.StubActivityRecord;
 
@@ -126,6 +128,23 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
                 if (task.userId != userId) {
                     continue;
                 }
+                synchronized (task.activities) {
+                    for (ActivityRecord r : task.activities) {
+                        if (r.token == token) {
+                            target = r;
+                        }
+                    }
+                }
+            }
+        }
+        return target;
+    }
+
+    private ActivityRecord findActivityByToken(IBinder token) {
+        ActivityRecord target = null;
+        if (token != null) {
+            for (int i = 0; i < this.mHistory.size(); i++) {
+                TaskRecord task = this.mHistory.valueAt(i);
                 synchronized (task.activities) {
                     for (ActivityRecord r : task.activities) {
                         if (r.token == token) {
@@ -551,9 +570,17 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
 
         boolean isDialogStyle = isFloating || isTranslucent || showWallpaper;
         if (isDialogStyle) {
-            return VASettings.getStubDialogName(vpid);
+            if (PluginHandle.isPluginVPid(vpid)) {
+                return VASettings.getStubDialogName(PluginHandle.fetchPluginIdFromVPid(vpid) + 50);
+            } else {
+                return VASettings.getStubDialogName(vpid);
+            }
         } else {
-            return VASettings.getStubActivityName(vpid);
+            if (PluginHandle.isPluginVPid(vpid)) {
+                return VASettings.getStubActivityName(PluginHandle.fetchPluginIdFromVPid(vpid) + 50);
+            } else {
+                return VASettings.getStubActivityName(vpid);
+            }
         }
     }
 
@@ -609,12 +636,7 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
             return null;
         }
         Intent targetIntent = new Intent();
-        String className;
-        if (targetApp.pluginClient != null) {
-            className = fetchPluginStubActivity(targetApp.vpid, info);
-        } else {
-            className = fetchStubActivity(targetApp.vpid, info);
-        }
+        String className = fetchStubActivity(targetApp.vpid, info);
         targetIntent.setClassName(VirtualCore.get().getHostPkg(), className);
         ComponentName component = intent.getComponent();
         if (component == null) {
@@ -622,9 +644,10 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
         }
         targetIntent.setType(component.flattenToString());
 
-        int pluginId = targetApp.pluginClient == null ? -1 : targetApp.vpid;
+        PluginMetaBundle.putPluginIdToMeta(info, targetApp.vpid);
+        PluginMetaBundle.putIntentPluginId(intent, targetApp.vpid);
         StubActivityRecord saveInstance = new StubActivityRecord(intent, info,
-                sourceRecord != null ? sourceRecord.component : null, userId, pluginId);
+                sourceRecord != null ? sourceRecord.component : null, userId);
         saveInstance.saveToIntent(targetIntent);
         return targetIntent;
     }
@@ -659,10 +682,10 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
         }
     }
 
-    ActivityRecord onActivityDestroyed(int userId, IBinder token) {
+    ActivityRecord onActivityDestroyed(IBinder token) {
         synchronized (mHistory) {
             optimizeTasksLocked();
-            ActivityRecord r = findActivityByToken(userId, token);
+            ActivityRecord r = findActivityByToken(token);
             if (r != null) {
                 synchronized (r.task.activities) {
                     r.task.activities.remove(r);
@@ -697,9 +720,9 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
         }
     }
 
-    String getPackageForToken(int userId, IBinder token) {
+    String getPackageForToken(IBinder token) {
         synchronized (mHistory) {
-            ActivityRecord r = findActivityByToken(userId, token);
+            ActivityRecord r = findActivityByToken( token);
             if (r != null) {
                 return r.component.getPackageName();
             }
@@ -707,9 +730,9 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
         }
     }
 
-    ComponentName getCallingActivity(int userId, IBinder token) {
+    ComponentName getCallingActivity(IBinder token) {
         synchronized (mHistory) {
-            ActivityRecord r = findActivityByToken(userId, token);
+            ActivityRecord r = findActivityByToken( token);
             if (r != null) {
                 return r.caller != null ? r.caller : r.component;
             }
@@ -717,9 +740,9 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
         }
     }
 
-    public String getCallingPackage(int userId, IBinder token) {
+    public String getCallingPackage(IBinder token) {
         synchronized (mHistory) {
-            ActivityRecord r = findActivityByToken(userId, token);
+            ActivityRecord r = findActivityByToken(token);
             if (r != null) {
                 return r.caller != null ? r.caller.getPackageName() : "android";
             }
@@ -737,9 +760,9 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
         }
     }
 
-    ComponentName getActivityClassForToken(int userId, IBinder token) {
+    ComponentName getActivityClassForToken(IBinder token) {
         synchronized (mHistory) {
-            ActivityRecord r = findActivityByToken(userId, token);
+            ActivityRecord r = findActivityByToken(token);
             if (r != null) {
                 return r.component;
             }

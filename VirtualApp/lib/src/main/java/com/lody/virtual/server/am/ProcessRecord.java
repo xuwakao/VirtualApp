@@ -12,14 +12,13 @@ import com.lody.virtual.plugin.IPluginClient;
 import java.util.HashSet;
 import java.util.Set;
 
-final class ProcessRecord extends Binder implements Comparable<ProcessRecord> {
+public final class ProcessRecord extends Binder implements Comparable<ProcessRecord> {
 
 	final ConditionVariable lock = new ConditionVariable();
 	public final ApplicationInfo info; // all about the first app in the process
 	final public String processName; // name of the process
 	final Set<String> pkgList = new HashSet<>(); // List of packages
 	public IVClient client;
-	public IPluginClient pluginClient;
 	IInterface appThread;
 	public int pid;
 	public int vuid;

@@ -19,8 +19,10 @@ import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.plugin.PluginImpl;
 import com.lody.virtual.plugin.core.PluginCore;
 import com.lody.virtual.plugin.fixer.PluginFixer;
+import com.lody.virtual.plugin.fixer.PluginMetaBundle;
 import com.lody.virtual.plugin.hook.proxies.am.PluginHCallbackStub;
 import com.lody.virtual.plugin.hook.proxies.classloader.PluginClassLoader;
+import com.lody.virtual.plugin.utils.PluginHandle;
 import com.lody.virtual.remote.StubActivityRecord;
 
 import mirror.android.app.ActivityThread;
@@ -72,7 +74,11 @@ public class PluginInstrumentation extends InstrumentationDelegate implements II
 
     @Override
     public void callActivityOnResume(Activity activity) {
-        VActivityManager.get().onActivityResumed(activity);
+        int pluginId = PluginMetaBundle.getIntentPluginId(activity.getIntent());
+        if (PluginHandle.isPluginVPid(pluginId)) {
+            PluginImpl plugin = PluginCore.get().getPlugin(pluginId);
+            VActivityManager.get().onActivityResumed(activity, plugin.getUserId());
+        }
         super.callActivityOnResume(activity);
     }
 
@@ -83,7 +89,8 @@ public class PluginInstrumentation extends InstrumentationDelegate implements II
             return super.newActivity(clazz, context, token, application, intent, info, title, parent, id, lastNonConfigurationInstance);
         }
 
-        PluginImpl plugin = PluginCore.get().getPlugin(r.pluginId);
+        int pluginId = PluginMetaBundle.getIntentPluginId(r.intent);
+        PluginImpl plugin = PluginCore.get().getPlugin(pluginId);
         clazz = plugin.loadClass(r.info.name, true);
         Activity activity = super.newActivity(clazz, context, token, application, intent, info, title, parent, id, lastNonConfigurationInstance);
         mirror.android.app.Activity.mApplication.set(activity, plugin.getApp());
@@ -97,8 +104,9 @@ public class PluginInstrumentation extends InstrumentationDelegate implements II
             return super.newActivity(cl, className, intent);
         }
 
+        int pluginId = PluginMetaBundle.getIntentPluginId(r.intent);
         className = r.info.name;
-        PluginImpl plugin = PluginCore.get().getPlugin(r.pluginId);
+        PluginImpl plugin = PluginCore.get().getPlugin(pluginId);
         if (cl instanceof PluginClassLoader) {
             cl = plugin.getPluginDexClassLoader();
         }
@@ -114,7 +122,8 @@ public class PluginInstrumentation extends InstrumentationDelegate implements II
             super.callActivityOnCreate(activity, icicle);
             return;
         }
-        PluginImpl plugin = PluginCore.get().getPlugin(r.pluginId);
+        int pluginId = PluginMetaBundle.getIntentPluginId(r.intent);
+        PluginImpl plugin = PluginCore.get().getPlugin(pluginId);
         PluginFixer.fixActivity(activity, plugin);
         ContextFixer.fixContext(activity);
         r.intent.setExtrasClassLoader(plugin.getPluginDexClassLoader());
@@ -129,7 +138,8 @@ public class PluginInstrumentation extends InstrumentationDelegate implements II
             super.callActivityOnCreate(activity, icicle);
             return;
         }
-        PluginImpl plugin = PluginCore.get().getPlugin(r.pluginId);
+        int pluginId = PluginMetaBundle.getIntentPluginId(r.intent);
+        PluginImpl plugin = PluginCore.get().getPlugin(pluginId);
         PluginFixer.fixActivity(activity, plugin);
         ContextFixer.fixContext(activity);
         r.intent.setExtrasClassLoader(plugin.getPluginDexClassLoader());
