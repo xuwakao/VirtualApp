@@ -12,6 +12,7 @@ import io.virtualapp.delegate.MyAppRequestListener;
 import io.virtualapp.delegate.MyComponentDelegate;
 import io.virtualapp.delegate.MyPhoneInfoDelegate;
 import io.virtualapp.delegate.MyTaskDescriptionDelegate;
+import io.virtualapp.delegate.PluginTaskDescriptionDelegate;
 import jonathanfinerty.once.Once;
 
 /**
@@ -64,6 +65,8 @@ public class VApp extends MultiDexApplication {
                 virtualCore.addVisibleOutsidePackage("com.whatsapp");
                 virtualCore.addVisibleOutsidePackage("com.tencent.mm");
                 virtualCore.addVisibleOutsidePackage("com.immomo.momo");
+
+                virtualCore.setTaskDescriptionDelegate(new PluginTaskDescriptionDelegate());
             }
 
             @Override

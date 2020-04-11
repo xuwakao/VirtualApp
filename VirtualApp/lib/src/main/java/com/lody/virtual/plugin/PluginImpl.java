@@ -236,8 +236,7 @@ public class PluginImpl extends IVClient.Stub {
                     continue;
                 }
                 ProviderInfo info = ContentProviderHolderOreo.info.get(holder);
-                if (!info.authority.startsWith(VASettings.STUB_PLUGIN_AUTHORITY) &&
-                        !info.authority.startsWith(VASettings.STUB_DECLARED_CP_AUTHORITY) &&
+                if (!info.authority.startsWith(VASettings.STUB_DECLARED_CP_AUTHORITY) &&
                         !info.authority.startsWith(VASettings.STUB_CP_AUTHORITY)) {
                     provider = ProviderHook.createProxy(true, info.authority, provider);
                     ActivityThread.ProviderClientRecordJB.mProvider.set(clientRecord, provider);
@@ -250,8 +249,7 @@ public class PluginImpl extends IVClient.Stub {
                     continue;
                 }
                 ProviderInfo info = IActivityManager.ContentProviderHolder.info.get(holder);
-                if (!info.authority.startsWith(VASettings.STUB_PLUGIN_AUTHORITY) &&
-                        !info.authority.startsWith(VASettings.STUB_DECLARED_CP_AUTHORITY) &&
+                if (!info.authority.startsWith(VASettings.STUB_DECLARED_CP_AUTHORITY) &&
                         !info.authority.startsWith(VASettings.STUB_CP_AUTHORITY)) {
                     provider = ProviderHook.createProxy(true, info.authority, provider);
                     ActivityThread.ProviderClientRecordJB.mProvider.set(clientRecord, provider);
@@ -260,8 +258,7 @@ public class PluginImpl extends IVClient.Stub {
             } else {
                 String authority = ActivityThread.ProviderClientRecord.mName.get(clientRecord);
                 IInterface provider = ActivityThread.ProviderClientRecord.mProvider.get(clientRecord);
-                if (provider != null && !authority.startsWith(VASettings.STUB_PLUGIN_AUTHORITY) &&
-                        !authority.startsWith(VASettings.STUB_DECLARED_CP_AUTHORITY) &&
+                if (provider != null && !authority.startsWith(VASettings.STUB_DECLARED_CP_AUTHORITY) &&
                         !authority.startsWith(VASettings.STUB_CP_AUTHORITY)) {
                     provider = ProviderHook.createProxy(true, authority, provider);
                     ActivityThread.ProviderClientRecord.mProvider.set(clientRecord, provider);

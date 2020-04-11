@@ -19,7 +19,7 @@ import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.utils.ArrayUtils;
 import com.lody.virtual.helper.utils.ClassUtils;
 import com.lody.virtual.helper.utils.ComponentUtils;
-import com.lody.virtual.plugin.fixer.PluginMetaBundle;
+import com.lody.virtual.plugin.helper.PluginMetaBundle;
 import com.lody.virtual.plugin.utils.PluginHandle;
 import com.lody.virtual.remote.AppTaskInfo;
 import com.lody.virtual.remote.StubActivityRecord;
@@ -581,51 +581,6 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
             } else {
                 return VASettings.getStubActivityName(vpid);
             }
-        }
-    }
-
-    private String fetchPluginStubActivity(int vpid, ActivityInfo targetInfo) {
-
-        boolean isFloating = false;
-        boolean isTranslucent = false;
-        boolean showWallpaper = false;
-        try {
-            int[] R_Styleable_Window = R_Hide.styleable.Window.get();
-            int R_Styleable_Window_windowIsTranslucent = R_Hide.styleable.Window_windowIsTranslucent.get();
-            int R_Styleable_Window_windowIsFloating = R_Hide.styleable.Window_windowIsFloating.get();
-            int R_Styleable_Window_windowShowWallpaper = R_Hide.styleable.Window_windowShowWallpaper.get();
-
-            AttributeCache.Entry ent = AttributeCache.instance().get(targetInfo.packageName, targetInfo.theme,
-                    R_Styleable_Window);
-            if (ent != null && ent.array != null) {
-                showWallpaper = ent.array.getBoolean(R_Styleable_Window_windowShowWallpaper, false);
-                isTranslucent = ent.array.getBoolean(R_Styleable_Window_windowIsTranslucent, false);
-                isFloating = ent.array.getBoolean(R_Styleable_Window_windowIsFloating, false);
-            } else {
-                Resources resources = VirtualCore.get().getResources(targetInfo.packageName);
-                if (resources != null) {
-                    TypedArray typedArray = resources.newTheme().obtainStyledAttributes(targetInfo.theme, R_Styleable_Window);
-                    if (typedArray != null) {
-                        showWallpaper = typedArray.getBoolean(R_Styleable_Window_windowShowWallpaper, false);
-                        isTranslucent = typedArray.getBoolean(R_Styleable_Window_windowIsTranslucent, false);
-                        isFloating = typedArray.getBoolean(R_Styleable_Window_windowIsFloating, false);
-                    }
-                }
-            }
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-
-        boolean isDialogStyle = isFloating || isTranslucent || showWallpaper;
-        if (isDialogStyle) {
-            return VASettings.getStubDialogName(vpid);
-        } else {
-            /*int index = queryFreeActivity();
-            String pluginStubActivityName = VASettings.getPluginStubActivityName(index);
-            synchronized (mActivityRecords) {
-                mActivityRecords.put(index, pluginStubActivityName);
-            }*/
-            return VASettings.getPluginStubActivityName(vpid);
         }
     }
 

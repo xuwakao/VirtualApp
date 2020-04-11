@@ -1,6 +1,5 @@
 package com.lody.virtual.client.stub;
 
-import com.lody.virtual.plugin.stub.PluginStubActivity;
 import com.lody.virtual.plugin.utils.PluginHandle;
 
 import java.util.Locale;
@@ -19,9 +18,6 @@ public class VASettings {
     public static String RESOLVER_ACTIVITY = ResolverActivity.class.getName();
     public static String STUB_CP_AUTHORITY = "virtual_stub_";
     public static String STUB_DECLARED_CP_AUTHORITY = "virtual_stub_declared_";
-
-    public static String STUB_PLUGIN_ACTIVITY = PluginStubActivity.class.getName();
-    public static String STUB_PLUGIN_AUTHORITY = "plugin_stub_";
 
     public static int STUB_COUNT = 50;
     public static int STUB_DECLARED_CP_COUNT = 15;
@@ -73,16 +69,8 @@ public class VASettings {
         return String.format(Locale.ENGLISH, "%s%d", STUB_CP_AUTHORITY, PluginHandle.fetchPluginIdFromVPid(index) + 50);
     }
 
-    public static String getPluginAuthority(int index) {
-        return String.format(Locale.ENGLISH, "%s%d", STUB_PLUGIN_AUTHORITY, index);
-    }
-
     public static String getDeclaredCpAuthority(int index) {
         return String.format(Locale.ENGLISH, "%s%d", STUB_DECLARED_CP_AUTHORITY, index);
-    }
-
-    public static String getPluginStubActivityName(int index) {
-        return String.format(Locale.ENGLISH, "%s$P%d", STUB_PLUGIN_ACTIVITY, index);
     }
 
     public static class Wifi {

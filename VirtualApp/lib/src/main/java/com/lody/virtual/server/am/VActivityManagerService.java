@@ -42,7 +42,7 @@ import com.lody.virtual.helper.compat.IApplicationThreadCompat;
 import com.lody.virtual.helper.utils.ComponentUtils;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VUserHandle;
-import com.lody.virtual.plugin.fixer.PluginMetaBundle;
+import com.lody.virtual.plugin.helper.PluginMetaBundle;
 import com.lody.virtual.plugin.utils.PluginHandle;
 import com.lody.virtual.remote.AppTaskInfo;
 import com.lody.virtual.remote.BadgerInfo;

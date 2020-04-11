@@ -18,7 +18,7 @@ import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.plugin.PluginImpl;
 import com.lody.virtual.plugin.core.PluginCore;
-import com.lody.virtual.plugin.fixer.PluginMetaBundle;
+import com.lody.virtual.plugin.helper.PluginMetaBundle;
 import com.lody.virtual.remote.StubActivityRecord;
 
 import java.util.Iterator;

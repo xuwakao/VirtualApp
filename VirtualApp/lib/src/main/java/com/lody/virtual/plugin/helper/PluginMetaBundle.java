@@ -1,4 +1,4 @@
-package com.lody.virtual.plugin.fixer;
+package com.lody.virtual.plugin.helper;
 
 import android.content.pm.ComponentInfo;
 import android.os.Bundle;

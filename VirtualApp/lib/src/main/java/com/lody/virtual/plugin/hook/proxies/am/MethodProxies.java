@@ -1,6 +1,8 @@
 package com.lody.virtual.plugin.hook.proxies.am;
 
+import android.annotation.TargetApi;
 import android.app.ActivityManager;
+import android.app.Application;
 import android.app.IServiceConnection;
 import android.app.Notification;
 import android.app.Service;
@@ -36,6 +38,7 @@ import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.Constants;
 import com.lody.virtual.client.env.SpecialComponentList;
 import com.lody.virtual.client.hook.base.MethodProxy;
+import com.lody.virtual.client.hook.delegate.TaskDescriptionDelegate;
 import com.lody.virtual.client.hook.providers.ProviderHook;
 import com.lody.virtual.client.hook.secondary.ServiceConnectionDelegate;
 import com.lody.virtual.client.hook.utils.MethodParameterUtils;
@@ -54,6 +57,7 @@ import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.utils.ArrayUtils;
 import com.lody.virtual.helper.utils.BitmapUtils;
 import com.lody.virtual.helper.utils.ComponentUtils;
+import com.lody.virtual.helper.utils.DrawableUtils;
 import com.lody.virtual.helper.utils.FileUtils;
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
@@ -61,7 +65,7 @@ import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.os.VUserInfo;
 import com.lody.virtual.plugin.PluginImpl;
 import com.lody.virtual.plugin.core.PluginCore;
-import com.lody.virtual.plugin.fixer.PluginMetaBundle;
+import com.lody.virtual.plugin.helper.PluginMetaBundle;
 import com.lody.virtual.plugin.utils.PluginHandle;
 import com.lody.virtual.remote.AppTaskInfo;
 import com.lody.virtual.server.am.ServiceRecord;
@@ -223,11 +227,6 @@ class MethodProxies {
                 }
             }
             return method.invoke(who, args);
-        }
-
-        @Override
-        public boolean isEnable() {
-            return isAppProcess();
         }
     }
 
@@ -622,18 +621,7 @@ class MethodProxies {
         public Object call(Object who, Method method, Object... args) throws Throwable {
             int maxNum = (int) args[0];
             int flags = (int) args[1];
-            int pluginId = PluginCore.get().getLatestCallRunningProcessPlugin();
-            if (pluginId > 0) {
-                PluginImpl plugin = PluginCore.get().getPlugin(pluginId);
-                return VActivityManager.get().getServices(maxNum, flags, plugin.getUserId()).getList();
-            } else {
-                return method.invoke(who, args);
-            }
-        }
-
-        @Override
-        public boolean isEnable() {
-            return isAppProcess();
+            return VActivityManager.get().getServices(maxNum, flags, 0).getList();
         }
     }
 
@@ -1007,12 +995,6 @@ class MethodProxies {
             args[args.length - 1] = getRealUid();
             return method.invoke(who, args);
         }
-
-        @Override
-        public boolean isEnable() {
-            return isAppProcess();
-        }
-
     }
 
 
@@ -1040,12 +1022,6 @@ class MethodProxies {
             }
             return method.invoke(who, args);
         }
-
-        @Override
-        public boolean isEnable() {
-            return isAppProcess();
-        }
-
     }
 
 
@@ -1293,55 +1269,54 @@ class MethodProxies {
         }
     }
 
-//    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-//    static class SetTaskDescription extends MethodProxy {
-//        @Override
-//        public String getMethodName() {
-//            return "setTaskDescription";
-//        }
-//
-//        @Override
-//        public Object call(Object who, Method method, Object... args) throws Throwable {
-//            ActivityManager.TaskDescription td = (ActivityManager.TaskDescription) args[1];
-//            String label = td.getLabel();
-//            Bitmap icon = td.getIcon();
-//
-//            // If the activity label/icon isn't specified, the application's label/icon is shown instead
-//            // Android usually does that for us, but in this case we want info about the contained app, not VIrtualApp itself
-//            if (label == null || icon == null) {
-//                Application app = VClientImpl.get().getCurrentApplication();
-//                if (app != null) {
-//                    try {
-//                        if (label == null) {
-//                            label = app.getApplicationInfo().loadLabel(app.getPackageManager()).toString();
-//                        }
-//                        if (icon == null) {
-//                            Drawable drawable = app.getApplicationInfo().loadIcon(app.getPackageManager());
-//                            if (drawable != null) {
-//                                icon = DrawableUtils.drawableToBitMap(drawable);
-//                            }
-//                        }
-//                        td = new ActivityManager.TaskDescription(label, icon, td.getPrimaryColor());
-//                    } catch (Throwable e) {
-//                        e.printStackTrace();
-//                    }
-//                }
-//            }
-//
-//            TaskDescriptionDelegate descriptionDelegate = VirtualCore.get().getTaskDescriptionDelegate();
-//            if (descriptionDelegate != null) {
-//                td = descriptionDelegate.getTaskDescription(td);
-//            }
-//
-//            args[1] = td;
-//            return method.invoke(who, args);
-//        }
-//
-//        @Override
-//        public boolean isEnable() {
-//            return isAppProcess();
-//        }
-//    }
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+    static class SetTaskDescription extends MethodProxy {
+        @Override
+        public String getMethodName() {
+            return "setTaskDescription";
+        }
+
+        @Override
+        public Object call(Object who, Method method, Object... args) throws Throwable {
+            ActivityManager.TaskDescription td = (ActivityManager.TaskDescription) args[1];
+            String label = td.getLabel();
+            Bitmap icon = td.getIcon();
+
+            IBinder token = (IBinder) args[0];
+            ComponentName activityForToken = VActivityManager.get().getActivityForToken(token);
+            if (activityForToken != null) {
+                // If the activity label/icon isn't specified, the application's label/icon is shown instead
+                // Android usually does that for us, but in this case we want info about the contained app, not VIrtualApp itself
+                if (label == null || icon == null) {
+                    Application app = PluginCore.get().findPluginByPackage(activityForToken.getPackageName()).getApp();
+                    if (app != null) {
+                        try {
+                            if (label == null) {
+                                label = app.getApplicationInfo().loadLabel(app.getPackageManager()).toString();
+                            }
+                            if (icon == null) {
+                                Drawable drawable = app.getApplicationInfo().loadIcon(app.getPackageManager());
+                                if (drawable != null) {
+                                    icon = DrawableUtils.drawableToBitMap(drawable);
+                                }
+                            }
+                            td = new ActivityManager.TaskDescription(label, icon, td.getPrimaryColor());
+                        } catch (Throwable e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            }
+
+            TaskDescriptionDelegate descriptionDelegate = VirtualCore.get().getTaskDescriptionDelegate();
+            if (descriptionDelegate != null) {
+                td = descriptionDelegate.getTaskDescription(td);
+            }
+
+            args[1] = td;
+            return method.invoke(who, args);
+        }
+    }
 
     static class StopServiceToken extends MethodProxy {
 

@@ -61,7 +61,7 @@ import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.os.VUserInfo;
-import com.lody.virtual.plugin.fixer.PluginMetaBundle;
+import com.lody.virtual.plugin.helper.PluginMetaBundle;
 import com.lody.virtual.remote.AppTaskInfo;
 import com.lody.virtual.server.interfaces.IAppRequestListener;
 

@@ -22,7 +22,7 @@ import com.lody.virtual.client.fixer.ComponentFixer;
 import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.compat.ObjectsCompat;
 import com.lody.virtual.os.VUserHandle;
-import com.lody.virtual.plugin.fixer.PluginMetaBundle;
+import com.lody.virtual.plugin.helper.PluginMetaBundle;
 import com.lody.virtual.plugin.utils.PluginHandle;
 import com.lody.virtual.remote.VParceledListSlice;
 import com.lody.virtual.server.am.ProcessRecord;
