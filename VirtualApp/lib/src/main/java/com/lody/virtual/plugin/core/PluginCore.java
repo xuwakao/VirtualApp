@@ -9,23 +9,35 @@ import android.os.Process;
 import com.lody.virtual.helper.collection.SparseArray;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.plugin.PluginImpl;
-import com.lody.virtual.plugin.fixer.PluginMetaBundle;
 import com.lody.virtual.plugin.hook.proxies.classloader.PluginClassLoader;
-import com.lody.virtual.plugin.utils.PluginHandle;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
 public class PluginCore {
     private static final String TAG = "PluginCore";
 
     private boolean useHostClassIfNotFound;
     private SparseArray<PluginImpl> mPlugins = new SparseArray<>();
+    private Map<String, PluginImpl> mAuthPlugins = new HashMap<>();
     private PluginClassLoader mPluginClassLoader;
     private PluginCallerContext mCallerContext;
+
+    public PluginImpl getPluginByCpAuth(String auth) {
+        synchronized (mAuthPlugins) {
+            return mAuthPlugins.get(auth);
+        }
+    }
+
+    public void putPluginByCpAuth(String auth, PluginImpl plugin) {
+        synchronized (mAuthPlugins) {
+            mAuthPlugins.put(auth, plugin);
+        }
+    }
 
     private static class Singleton {
         static final PluginCore singleton = new PluginCore();
@@ -45,12 +57,12 @@ public class PluginCore {
         }
     }
 
+    public SparseArray<PluginImpl> getPlugins() {
+        return mPlugins;
+    }
+
     public PluginImpl findPlugin(Intent intent) {
         synchronized (mPlugins) {
-            int pluginId = PluginMetaBundle.getIntentPluginId(intent);
-            if (PluginHandle.isPluginVPid(pluginId)) {
-                return getPlugin(pluginId);
-            }
             String packageName = intent.getPackage();
             ComponentName component = intent.getComponent();
             if (packageName == null) {
@@ -69,7 +81,7 @@ public class PluginCore {
         synchronized (mPlugins) {
             for (int i = 0; i < mPlugins.size(); i++) {
                 PluginImpl plugin = mPlugins.valueAt(i);
-                if (plugin.getApplicationInfo().packageName.equals(packageName)) {
+                if (plugin.isBound() && plugin.getApplicationInfo().packageName.equals(packageName)) {
                     return plugin;
                 }
             }

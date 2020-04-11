@@ -180,11 +180,10 @@ public class VActivityManagerService implements IActivityManager {
     }
 
     @Override
-    public void onActivityCreated(ComponentName component, ComponentName caller, IBinder token, Intent intent, String affinity, int taskId, int launchMode, int flags) {
+    public void onActivityCreated(ComponentName component, ComponentName caller, IBinder token, Intent intent, String affinity, int taskId, int launchMode, int flags, int pluginId) {
         int pid = Binder.getCallingPid();
-        int vpid = PluginMetaBundle.getIntentPluginId(intent);
-        if (PluginHandle.isPluginVPid(vpid)) {
-            pid = vpid;
+        if (pluginId >= 0) {
+            pid = pluginId;
         }
         ProcessRecord targetApp = findProcessLocked(pid);
         if (targetApp != null) {
@@ -833,7 +832,7 @@ public class VActivityManagerService implements IActivityManager {
     public int getVPidByPackage(String processName, int uid) {
         synchronized (mProcessNames) {
             ProcessRecord processRecord = mProcessNames.get(processName, uid);
-            if(processRecord != null) {
+            if (processRecord != null) {
                 return processRecord.vpid;
             }
         }

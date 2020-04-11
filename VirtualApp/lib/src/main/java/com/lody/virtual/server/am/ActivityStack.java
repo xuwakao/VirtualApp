@@ -645,7 +645,6 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
         targetIntent.setType(component.flattenToString());
 
         PluginMetaBundle.putPluginIdToMeta(info, targetApp.vpid);
-        PluginMetaBundle.putIntentPluginId(intent, targetApp.vpid);
         StubActivityRecord saveInstance = new StubActivityRecord(intent, info,
                 sourceRecord != null ? sourceRecord.component : null, userId);
         saveInstance.saveToIntent(targetIntent);

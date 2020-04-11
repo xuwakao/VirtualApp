@@ -194,7 +194,7 @@ public class HCallbackStub implements Handler.Callback, IInjector {
                             );
                             VActivityManager.get().onActivityCreate(ComponentUtils.toComponentName(info),
                                     caller, token, info, intent, ComponentUtils.getTaskAffinity(info),
-                                    taskId, info.launchMode, info.flags);
+                                    taskId, info.launchMode, info.flags, -1);
                             ClassLoader appClassLoader = VClientImpl.get().getClassLoader(info.applicationInfo);
                             intent.setExtrasClassLoader(appClassLoader);
 
@@ -241,7 +241,7 @@ public class HCallbackStub implements Handler.Callback, IInjector {
                 token,
                 false
         );
-        VActivityManager.get().onActivityCreate(ComponentUtils.toComponentName(info), caller, token, info, intent, ComponentUtils.getTaskAffinity(info), taskId, info.launchMode, info.flags);
+        VActivityManager.get().onActivityCreate(ComponentUtils.toComponentName(info), caller, token, info, intent, ComponentUtils.getTaskAffinity(info), taskId, info.launchMode, info.flags, -1);
         ClassLoader appClassLoader = VClientImpl.get().getClassLoader(info.applicationInfo);
         intent.setExtrasClassLoader(appClassLoader);
         ActivityThread.ActivityClientRecord.intent.set(r, intent);

@@ -29,6 +29,10 @@ public class InstrumentationDelegate extends Instrumentation {
 		this.base = base;
 	}
 
+	public Instrumentation getBase() {
+		return base;
+	}
+
 	public static Application newApplication(Class<?> clazz, Context context)
 			throws InstantiationException, IllegalAccessException, ClassNotFoundException {
 		return Instrumentation.newApplication(clazz, context);

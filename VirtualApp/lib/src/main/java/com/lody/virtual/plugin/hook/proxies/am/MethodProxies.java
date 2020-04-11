@@ -9,6 +9,7 @@ import android.content.IIntentReceiver;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.ComponentInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ProviderInfo;
@@ -24,6 +25,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.IInterface;
+import android.os.Process;
 import android.os.RemoteException;
 import android.text.TextUtils;
 import android.util.Log;
@@ -46,6 +48,7 @@ import com.lody.virtual.client.stub.StubPendingActivity;
 import com.lody.virtual.client.stub.StubPendingReceiver;
 import com.lody.virtual.client.stub.StubPendingService;
 import com.lody.virtual.client.stub.VASettings;
+import com.lody.virtual.helper.collection.SparseArray;
 import com.lody.virtual.helper.compat.ActivityManagerCompat;
 import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.utils.ArrayUtils;
@@ -54,6 +57,7 @@ import com.lody.virtual.helper.utils.ComponentUtils;
 import com.lody.virtual.helper.utils.FileUtils;
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
+import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.os.VUserInfo;
 import com.lody.virtual.plugin.PluginImpl;
 import com.lody.virtual.plugin.core.PluginCore;
@@ -881,12 +885,36 @@ class MethodProxies {
         public synchronized Object call(Object who, Method method, Object... args) throws Throwable {
             List<ActivityManager.RunningAppProcessInfo> infoList = (List<ActivityManager.RunningAppProcessInfo>) method
                     .invoke(who, args);
-            ArrayList<ActivityManager.RunningAppProcessInfo> result = new ArrayList<>();
             if (infoList != null) {
-                result.addAll(PluginCore.get().getProcessList());
-                result.addAll(infoList);
+                if (isMainProcess()) {
+                    ArrayList<ActivityManager.RunningAppProcessInfo> results = new ArrayList<>();
+                    SparseArray<PluginImpl> plugins = PluginCore.get().getPlugins();
+                    for (int i = 0; i < plugins.size(); i++) {
+                        PluginImpl plugin = plugins.valueAt(i);
+                        ApplicationInfo applicationInfo = plugin.getApplicationInfo();
+                        ActivityManager.RunningAppProcessInfo processInfo = new ActivityManager.RunningAppProcessInfo();
+                        processInfo.pid = Process.myPid();
+                        processInfo.processName = applicationInfo.processName == null ? applicationInfo.packageName : applicationInfo.packageName;
+                        results.add(processInfo);
+                    }
+                    results.addAll(infoList);
+                    return results;
+                } else {
+                    for (ActivityManager.RunningAppProcessInfo info : infoList) {
+                        if (VActivityManager.get().isAppPid(info.pid)) {
+                            List<String> pkgList = VActivityManager.get().getProcessPkgList(info.pid);
+                            String processName = VActivityManager.get().getAppProcessName(info.pid);
+                            if (processName != null) {
+                                info.processName = processName;
+                            }
+                            info.pkgList = pkgList.toArray(new String[pkgList.size()]);
+                            info.uid = VUserHandle.getAppId(VActivityManager.get().getUidByPid(info.pid));
+                        }
+                    }
+                    return infoList;
+                }
             }
-            return result;
+            return method.invoke(who, args);
         }
     }
 
@@ -1202,17 +1230,14 @@ class MethodProxies {
         public Object call(Object who, Method method, Object... args) throws Throwable {
             int nameIdx = getProviderNameIndex();
             String name = (String) args[nameIdx];
-            int userId = (int) args[2];
-            if (!PluginHandle.isPluginHandle(userId)) {
+            PluginImpl plugin = PluginCore.get().getPluginByCpAuth(name);
+            if (plugin == null) {
                 return method.invoke(who, args);
             }
-            args[2] = PluginHandle.myHandle();
-            int pluginId = PluginHandle.getVPIdFromHandle(userId);
-            PluginImpl plugin = PluginCore.get().getPlugin(pluginId);
             ProviderInfo info = VPackageManager.get().resolveContentProvider(name, 0, plugin.getUserId());
             if (info != null && info.enabled && isAppPkg(info.packageName)) {
                 int targetVPid = VActivityManager.get().initProcess(info.packageName, info.processName, plugin.getUserId());
-                String stubAuthority = VASettings.getPluginStubAuthority(pluginId);
+                String stubAuthority = VASettings.getPluginStubAuthority(targetVPid);
                 if (targetVPid == -1) {
                     return null;
                 }
@@ -1224,7 +1249,7 @@ class MethodProxies {
                 if (BuildCompat.isOreo()) {
                     IInterface provider = ContentProviderHolderOreo.provider.get(holder);
                     if (provider != null) {
-                        PluginMetaBundle.putPluginIdToMeta(info, pluginId);
+                        PluginMetaBundle.putPluginIdToMeta(info, targetVPid);
                         provider = VActivityManager.get().acquireProviderClient(plugin.getUserId(), info);
                     }
                     ContentProviderHolderOreo.provider.set(holder, provider);
@@ -1232,7 +1257,7 @@ class MethodProxies {
                 } else {
                     IInterface provider = IActivityManager.ContentProviderHolder.provider.get(holder);
                     if (provider != null) {
-                        PluginMetaBundle.putPluginIdToMeta(info, pluginId);
+                        PluginMetaBundle.putPluginIdToMeta(info, targetVPid);
                         provider = VActivityManager.get().acquireProviderClient(plugin.getUserId(), info);
                     }
                     IActivityManager.ContentProviderHolder.provider.set(holder, provider);

@@ -6,11 +6,7 @@ import com.lody.virtual.client.core.InvocationStubManager;
 import com.lody.virtual.client.hook.proxies.appops.AppOpsManagerStub;
 import com.lody.virtual.client.hook.proxies.job.JobServiceStub;
 import com.lody.virtual.client.hook.proxies.notification.NotificationManagerStub;
-import com.lody.virtual.client.hook.proxies.pm.PackageManagerStub;
-import com.lody.virtual.client.hook.proxies.window.WindowManagerStub;
 import com.lody.virtual.client.interfaces.IInjector;
-import com.lody.virtual.plugin.hook.proxies.am.PluginActivityManagerStub;
-import com.lody.virtual.plugin.hook.proxies.classloader.PluginClassLoaderStub;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -31,7 +27,7 @@ public class PluginInjectors implements IInjector {
     }
 
     public PluginInjectors() {
-        addInjector(new PluginClassLoaderStub());
+//        addInjector(new PluginClassLoaderStub());
         addInjector(new NotificationManagerStub());
 
         if (Build.VERSION.SDK_INT >= JELLY_BEAN_MR2) {
@@ -42,7 +38,7 @@ public class PluginInjectors implements IInjector {
         }
         if (Build.VERSION.SDK_INT >= KITKAT) {
 //            addInjector(new AlarmManagerStub());
-//            addInjector(new AppOpsManagerStub());
+            addInjector(new AppOpsManagerStub());
 //            addInjector(new MediaRouterServiceStub());
         }
         if (Build.VERSION.SDK_INT >= LOLLIPOP) {

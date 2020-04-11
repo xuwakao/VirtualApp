@@ -80,12 +80,12 @@ public class VActivityManager {
         return startActivity(intent, info, null, null, null, 0, userId);
     }
 
-    public ActivityClientRecord onActivityCreate(ComponentName component, ComponentName caller, IBinder token, ActivityInfo info, Intent intent, String affinity, int taskId, int launchMode, int flags) {
+    public ActivityClientRecord onActivityCreate(ComponentName component, ComponentName caller, IBinder token, ActivityInfo info, Intent intent, String affinity, int taskId, int launchMode, int flags, int pluginId) {
         ActivityClientRecord r = new ActivityClientRecord();
         r.info = info;
         mActivities.put(token, r);
         try {
-            getService().onActivityCreated(component, caller, token, intent, affinity, taskId, launchMode, flags);
+            getService().onActivityCreated(component, caller, token, intent, affinity, taskId, launchMode, flags, pluginId);
         } catch (RemoteException e) {
             e.printStackTrace();
         }

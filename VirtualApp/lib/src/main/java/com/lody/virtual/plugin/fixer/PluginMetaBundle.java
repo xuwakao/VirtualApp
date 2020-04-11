@@ -1,6 +1,5 @@
 package com.lody.virtual.plugin.fixer;
 
-import android.content.Intent;
 import android.content.pm.ComponentInfo;
 import android.os.Bundle;
 
@@ -31,14 +30,5 @@ public class PluginMetaBundle {
             return false;
         }
         return componentInfo.metaData.getBoolean("_VA_|_is_plugin_", false);
-    }
-
-    public static void putIntentPluginId(Intent intent, int vpid) {
-        if (intent != null)
-            intent.putExtra("_VA_|_v_plugin_id_", vpid);
-    }
-
-    public static int getIntentPluginId(Intent intent) {
-        return intent.getIntExtra("_VA_|_v_plugin_id_", -1);
     }
 }

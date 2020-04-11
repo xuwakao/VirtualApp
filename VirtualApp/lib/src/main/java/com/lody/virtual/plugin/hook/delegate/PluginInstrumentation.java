@@ -3,27 +3,25 @@ package com.lody.virtual.plugin.hook.delegate;
 import android.app.Activity;
 import android.app.Application;
 import android.app.Instrumentation;
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.PersistableBundle;
+import android.os.RemoteException;
 
-import com.lody.virtual.client.core.InvocationStubManager;
+import com.lody.virtual.client.VClientImpl;
 import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.client.fixer.ActivityFixer;
 import com.lody.virtual.client.fixer.ContextFixer;
+import com.lody.virtual.client.hook.delegate.AppInstrumentation;
 import com.lody.virtual.client.hook.delegate.InstrumentationDelegate;
 import com.lody.virtual.client.interfaces.IInjector;
+import com.lody.virtual.client.ipc.ActivityClientRecord;
 import com.lody.virtual.client.ipc.VActivityManager;
-import com.lody.virtual.plugin.PluginImpl;
-import com.lody.virtual.plugin.core.PluginCore;
-import com.lody.virtual.plugin.fixer.PluginFixer;
-import com.lody.virtual.plugin.fixer.PluginMetaBundle;
-import com.lody.virtual.plugin.hook.proxies.am.PluginHCallbackStub;
-import com.lody.virtual.plugin.hook.proxies.classloader.PluginClassLoader;
-import com.lody.virtual.plugin.utils.PluginHandle;
-import com.lody.virtual.remote.StubActivityRecord;
+import com.lody.virtual.helper.compat.BundleCompat;
+import com.lody.virtual.os.VUserHandle;
+import com.lody.virtual.server.interfaces.IUiCallback;
 
 import mirror.android.app.ActivityThread;
 
@@ -55,16 +53,16 @@ public class PluginInstrumentation extends InstrumentationDelegate implements II
         if (instrumentation instanceof PluginInstrumentation) {
             return (PluginInstrumentation) instrumentation;
         }
+        if(instrumentation instanceof AppInstrumentation) {
+            instrumentation = ((AppInstrumentation) instrumentation).getBase();
+        }
         return new PluginInstrumentation(instrumentation);
     }
 
     @Override
     public void inject() throws Throwable {
-        if (!sInject) {
-            base = ActivityThread.mInstrumentation.get(VirtualCore.mainThread());
-            ActivityThread.mInstrumentation.set(VirtualCore.mainThread(), this);
-            sInject = true;
-        }
+        base = ActivityThread.mInstrumentation.get(VirtualCore.mainThread());
+        ActivityThread.mInstrumentation.set(VirtualCore.mainThread(), this);
     }
 
     @Override
@@ -73,77 +71,85 @@ public class PluginInstrumentation extends InstrumentationDelegate implements II
     }
 
     @Override
-    public void callActivityOnResume(Activity activity) {
-        int pluginId = PluginMetaBundle.getIntentPluginId(activity.getIntent());
-        if (PluginHandle.isPluginVPid(pluginId)) {
-            PluginImpl plugin = PluginCore.get().getPlugin(pluginId);
-            VActivityManager.get().onActivityResumed(activity, plugin.getUserId());
-        }
-        super.callActivityOnResume(activity);
-    }
-
-    @Override
-    public Activity newActivity(Class<?> clazz, Context context, IBinder token, Application application, Intent intent, ActivityInfo info, CharSequence title, Activity parent, String id, Object lastNonConfigurationInstance) throws InstantiationException, IllegalAccessException {
-        StubActivityRecord r = new StubActivityRecord(intent);
-        if (r.intent == null) {
-            return super.newActivity(clazz, context, token, application, intent, info, title, parent, id, lastNonConfigurationInstance);
-        }
-
-        int pluginId = PluginMetaBundle.getIntentPluginId(r.intent);
-        PluginImpl plugin = PluginCore.get().getPlugin(pluginId);
-        clazz = plugin.loadClass(r.info.name, true);
-        Activity activity = super.newActivity(clazz, context, token, application, intent, info, title, parent, id, lastNonConfigurationInstance);
-        mirror.android.app.Activity.mApplication.set(activity, plugin.getApp());
-        return activity;
-    }
-
-    @Override
-    public Activity newActivity(ClassLoader cl, String className, Intent intent) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
-        StubActivityRecord r = new StubActivityRecord(intent);
-        if (r.intent == null) {
-            return super.newActivity(cl, className, intent);
-        }
-
-        int pluginId = PluginMetaBundle.getIntentPluginId(r.intent);
-        className = r.info.name;
-        PluginImpl plugin = PluginCore.get().getPlugin(pluginId);
-        if (cl instanceof PluginClassLoader) {
-            cl = plugin.getPluginDexClassLoader();
-        }
-        Activity activity = super.newActivity(cl, className, intent);
-        mirror.android.app.Activity.mApplication.set(activity, plugin.getApp());
-        return activity;
-    }
-
-    @Override
     public void callActivityOnCreate(Activity activity, Bundle icicle) {
-        StubActivityRecord r = new StubActivityRecord(activity.getIntent());
-        if (r.intent == null) {
-            super.callActivityOnCreate(activity, icicle);
-            return;
+        if (icicle != null) {
+            BundleCompat.clearParcelledData(icicle);
         }
-        int pluginId = PluginMetaBundle.getIntentPluginId(r.intent);
-        PluginImpl plugin = PluginCore.get().getPlugin(pluginId);
-        PluginFixer.fixActivity(activity, plugin);
+        VirtualCore.get().getComponentDelegate().beforeActivityCreate(activity);
+        IBinder token = mirror.android.app.Activity.mToken.get(activity);
+        ActivityClientRecord r = VActivityManager.get().getActivityRecord(token);
+        if (r != null) {
+            r.activity = activity;
+        }
+
         ContextFixer.fixContext(activity);
-        r.intent.setExtrasClassLoader(plugin.getPluginDexClassLoader());
-        InvocationStubManager.getInstance().checkEnv(PluginHCallbackStub.class);
+        ActivityFixer.fixActivity(activity);
+        ActivityInfo info = null;
+        if (r != null) {
+            info = r.info;
+        }
+        if (info != null) {
+            if (info.theme != 0) {
+                activity.setTheme(info.theme);
+            }
+            if (activity.getRequestedOrientation() == ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                    && info.screenOrientation != ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED) {
+                activity.setRequestedOrientation(info.screenOrientation);
+            }
+        }
         super.callActivityOnCreate(activity, icicle);
+        VirtualCore.get().getComponentDelegate().afterActivityCreate(activity);
     }
 
     @Override
     public void callActivityOnCreate(Activity activity, Bundle icicle, PersistableBundle persistentState) {
-        StubActivityRecord r = new StubActivityRecord(activity.getIntent());
-        if (r.intent == null) {
-            super.callActivityOnCreate(activity, icicle);
-            return;
+        if (icicle != null) {
+            BundleCompat.clearParcelledData(icicle);
         }
-        int pluginId = PluginMetaBundle.getIntentPluginId(r.intent);
-        PluginImpl plugin = PluginCore.get().getPlugin(pluginId);
-        PluginFixer.fixActivity(activity, plugin);
-        ContextFixer.fixContext(activity);
-        r.intent.setExtrasClassLoader(plugin.getPluginDexClassLoader());
-        InvocationStubManager.getInstance().checkEnv(PluginHCallbackStub.class);
         super.callActivityOnCreate(activity, icicle, persistentState);
+    }
+
+    @Override
+    public void callActivityOnResume(Activity activity) {
+        VirtualCore.get().getComponentDelegate().beforeActivityResume(activity);
+        VActivityManager.get().onActivityResumed(activity, VUserHandle.myUserId());
+        super.callActivityOnResume(activity);
+        VirtualCore.get().getComponentDelegate().afterActivityResume(activity);
+        Intent intent = activity.getIntent();
+        if (intent != null) {
+            Bundle bundle = intent.getBundleExtra("_VA_|_sender_");
+            if (bundle != null) {
+                IBinder callbackToken = BundleCompat.getBinder(bundle, "_VA_|_ui_callback_");
+                IUiCallback callback = IUiCallback.Stub.asInterface(callbackToken);
+                if (callback != null) {
+                    try {
+                        callback.onAppOpened(VClientImpl.get().getCurrentPackage(), VUserHandle.myUserId());
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+    }
+
+
+    @Override
+    public void callActivityOnDestroy(Activity activity) {
+        VirtualCore.get().getComponentDelegate().beforeActivityDestroy(activity);
+        super.callActivityOnDestroy(activity);
+        VirtualCore.get().getComponentDelegate().afterActivityDestroy(activity);
+    }
+
+    @Override
+    public void callActivityOnPause(Activity activity) {
+        VirtualCore.get().getComponentDelegate().beforeActivityPause(activity);
+        super.callActivityOnPause(activity);
+        VirtualCore.get().getComponentDelegate().afterActivityPause(activity);
+    }
+
+
+    @Override
+    public void callApplicationOnCreate(Application app) {
+        super.callApplicationOnCreate(app);
     }
 }

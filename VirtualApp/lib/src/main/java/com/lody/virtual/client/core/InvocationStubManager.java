@@ -116,8 +116,8 @@ public final class InvocationStubManager {
 			addInjector(new PluginActivityManagerStub());
 			addInjector(new PackageManagerStub());
 			addInjector(PluginHCallbackStub.getDefault());
-			addInjector(new WindowManagerStub());//must
-			addInjector(new ContentServiceStub());
+			addInjector(new WindowManagerStub());//must Toast
+			addInjector(new ContentServiceStub());//must:content resolver
 			return;
 		}
 		if (VirtualCore.get().isServerProcess()) {
