@@ -10,7 +10,6 @@ import android.os.IBinder;
 import android.os.PersistableBundle;
 import android.os.RemoteException;
 
-import com.lody.virtual.client.VClientImpl;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.fixer.ActivityFixer;
 import com.lody.virtual.client.fixer.ContextFixer;
@@ -20,12 +19,15 @@ import com.lody.virtual.client.interfaces.IInjector;
 import com.lody.virtual.client.ipc.ActivityClientRecord;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.helper.compat.BundleCompat;
-import com.lody.virtual.os.VUserHandle;
+import com.lody.virtual.helper.utils.VLog;
+import com.lody.virtual.plugin.PluginImpl;
+import com.lody.virtual.plugin.core.PluginCore;
 import com.lody.virtual.server.interfaces.IUiCallback;
 
 import mirror.android.app.ActivityThread;
 
 public class PluginInstrumentation extends InstrumentationDelegate implements IInjector {
+    private static final String TAG = "PluginInstrumentation";
 
     private static PluginInstrumentation gDefault;
     /**
@@ -53,7 +55,7 @@ public class PluginInstrumentation extends InstrumentationDelegate implements II
         if (instrumentation instanceof PluginInstrumentation) {
             return (PluginInstrumentation) instrumentation;
         }
-        if(instrumentation instanceof AppInstrumentation) {
+        if (instrumentation instanceof AppInstrumentation) {
             instrumentation = ((AppInstrumentation) instrumentation).getBase();
         }
         return new PluginInstrumentation(instrumentation);
@@ -112,7 +114,14 @@ public class PluginInstrumentation extends InstrumentationDelegate implements II
     @Override
     public void callActivityOnResume(Activity activity) {
         VirtualCore.get().getComponentDelegate().beforeActivityResume(activity);
-        VActivityManager.get().onActivityResumed(activity, VUserHandle.myUserId());
+        String packageName = activity.getPackageName();
+        PluginImpl plugin = PluginCore.get().findPluginByPackage(packageName);
+        if (plugin == null) {
+            VLog.w(TAG, "callActivityOnResume but plugin is NULL");
+            super.callActivityOnResume(activity);
+            return;
+        }
+        VActivityManager.get().onActivityResumed(activity, plugin.getUserId());
         super.callActivityOnResume(activity);
         VirtualCore.get().getComponentDelegate().afterActivityResume(activity);
         Intent intent = activity.getIntent();
@@ -123,7 +132,7 @@ public class PluginInstrumentation extends InstrumentationDelegate implements II
                 IUiCallback callback = IUiCallback.Stub.asInterface(callbackToken);
                 if (callback != null) {
                     try {
-                        callback.onAppOpened(VClientImpl.get().getCurrentPackage(), VUserHandle.myUserId());
+                        callback.onAppOpened(plugin.getApplicationInfo().packageName, plugin.getUserId());
                     } catch (RemoteException e) {
                         e.printStackTrace();
                     }
