@@ -1127,9 +1127,6 @@ class MethodProxies {
 
             public void performReceive(Intent intent, int resultCode, String data, Bundle extras, boolean ordered,
                                        boolean sticky, int sendingUser) throws RemoteException {
-                if (!accept(intent)) {
-                    return;
-                }
                 if (intent.hasExtra("_VA_|_intent_")) {
                     intent = intent.getParcelableExtra("_VA_|_intent_");
                 }
@@ -1139,16 +1136,6 @@ class MethodProxies {
                 } else {
                     mirror.android.content.IIntentReceiver.performReceive.call(mOld, intent, resultCode, data, extras, ordered, sticky);
                 }
-            }
-
-            private boolean accept(Intent intent) {
-                return intent.hasExtra("_VA_|_user_id_");
-                /*int uid = intent.getIntExtra("_VA_|_uid_", -1);
-                if (uid != -1) {
-                    return VClientImpl.get().getVUid() == uid;
-                }
-                int userId = intent.getIntExtra("_VA_|_user_id_", -1);
-                return userId == -1 || userId == VUserHandle.myPluginUserId();*/
             }
 
             @SuppressWarnings("unused")
@@ -1375,16 +1362,12 @@ class MethodProxies {
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
             Intent intent = (Intent) args[1];
-            PluginImpl plugin = PluginCore.get().findPlugin(intent);
-            if (plugin == null) {
-                return method.invoke(who, args);
-            }
             String type = (String) args[2];
             intent.setDataAndType(intent.getData(), type);
             if (VirtualCore.get().getComponentDelegate() != null) {
                 VirtualCore.get().getComponentDelegate().onSendBroadcast(intent);
             }
-            Intent newIntent = handleIntent(intent, plugin.getUserId());
+            Intent newIntent = handleIntent(intent);
             if (newIntent != null) {
                 args[1] = newIntent;
             } else {
@@ -1399,12 +1382,12 @@ class MethodProxies {
         }
 
 
-        private Intent handleIntent(final Intent intent, int userId) {
+        private Intent handleIntent(final Intent intent) {
             final String action = intent.getAction();
             if ("android.intent.action.CREATE_SHORTCUT".equals(action)
                     || "com.android.launcher.action.INSTALL_SHORTCUT".equals(action)) {
 
-                return VASettings.ENABLE_INNER_SHORTCUT ? handleInstallShortcutIntent(intent, userId) : null;
+                return VASettings.ENABLE_INNER_SHORTCUT ? handleInstallShortcutIntent(intent) : null;
 
             } else if ("com.android.launcher.action.UNINSTALL_SHORTCUT".equals(action)) {
 
@@ -1413,17 +1396,31 @@ class MethodProxies {
             } else if (BadgerManager.handleBadger(intent)) {
                 return null;
             } else {
+                ComponentName component = intent.getComponent();
+                String pkg = intent.getPackage();
+                int userId;
+                if (component != null) {
+                    PluginImpl plugin = PluginCore.get().findPluginByPackage(component.getPackageName());
+                    userId = plugin.getUserId();
+                } else if (pkg != null) {
+                    PluginImpl plugin = PluginCore.get().findPluginByPackage(pkg);
+                    userId = plugin.getUserId();
+                } else {
+                    userId = VUserHandle.USER_PLUGIN_IN_MAIN_PROCESS;
+                }
                 return ComponentUtils.redirectBroadcastIntent(intent, userId);
             }
             return intent;
         }
 
-        private Intent handleInstallShortcutIntent(Intent intent, int userId) {
+        private Intent handleInstallShortcutIntent(Intent intent) {
             Intent shortcut = intent.getParcelableExtra(Intent.EXTRA_SHORTCUT_INTENT);
             if (shortcut != null) {
                 ComponentName component = shortcut.resolveActivity(VirtualCore.getPM());
                 if (component != null) {
                     String pkg = component.getPackageName();
+                    PluginImpl plugin = PluginCore.get().findPluginByPackage(pkg);
+                    int userId = plugin.getUserId();
                     Intent newShortcutIntent = new Intent();
                     newShortcutIntent.setClassName(getHostPkg(), Constants.SHORTCUT_PROXY_ACTIVITY_NAME);
                     newShortcutIntent.addCategory(Intent.CATEGORY_DEFAULT);

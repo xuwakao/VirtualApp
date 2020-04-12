@@ -51,6 +51,8 @@ public final class VUserHandle implements Parcelable {
      *  to the caller's user instead of failing with a security exception */
     public static final int USER_CURRENT_OR_SELF = -3;
 
+    public static final int USER_PLUGIN_IN_MAIN_PROCESS = -20000;
+
     /** @hide A user handle to indicate that we would like to send to the current
      *  user, but if this is calling from a user process then we will send it
      *  to the caller's user instead of failing with a security exception */

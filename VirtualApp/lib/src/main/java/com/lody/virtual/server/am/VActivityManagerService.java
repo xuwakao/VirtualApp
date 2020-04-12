@@ -1043,6 +1043,24 @@ public class VActivityManagerService implements IActivityManager {
         return mProcessNames.get(processName, uid);
     }
 
+    public ProcessRecord findPluginProcessLocked(String pkg) {
+        synchronized (mProcessNames) {
+            ArrayMap<String, SparseArray<ProcessRecord>> map = mProcessNames.getMap();
+            int N = map.size();
+            while (N-- > 0) {
+                SparseArray<ProcessRecord> uids = map.valueAt(N);
+                for (int i = 0; i < uids.size(); i++) {
+                    ProcessRecord r = uids.valueAt(i);
+                    if (r.pkgList.contains(pkg)) {
+                        if (PluginHandle.isPluginVPid(r.pid))
+                            return r;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
     public int stopUser(int userHandle, IStopUserCallback.Stub stub) {
         synchronized (mPidsSelfLocked) {
             int N = mPidsSelfLocked.size();
@@ -1107,6 +1125,14 @@ public class VActivityManagerService implements IActivityManager {
         int userId = intent.getIntExtra("_VA_|_user_id_", VUserHandle.USER_NULL);
         if (realIntent == null) {
             return false;
+        }
+
+        if (userId == VUserHandle.USER_PLUGIN_IN_MAIN_PROCESS) {
+            //may be plugin from main process only has intent action
+            ProcessRecord r = findPluginProcessLocked(info.packageName);
+            if (r != null) {
+                userId = VUserHandle.getUserId(r.vuid);
+            }
         }
         if (userId < 0) {
             VLog.w(TAG, "Sent a broadcast without userId " + realIntent);
