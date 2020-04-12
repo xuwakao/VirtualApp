@@ -73,6 +73,10 @@ public class VASettings {
         return String.format(Locale.ENGLISH, "%s%d", STUB_DECLARED_CP_AUTHORITY, index);
     }
 
+    public static String getMainDeclaredCpAuthority() {
+        return String.format(Locale.ENGLISH, "%s%s", STUB_DECLARED_CP_AUTHORITY, "main");
+    }
+
     public static class Wifi {
         public static boolean FAKE_WIFI_STATE = false;
         public static String DEFAULT_BSSID = "66:55:44:33:22:11";

@@ -2148,78 +2148,98 @@
             android:exported="false" />
 
         <provider
+            android:authorities="${applicationId}.virtual_stub_declared_main"
+            android:exported="false"
+            android:name=".client.stub.StubDeclaredProvider"/>
+
+        <provider
             android:authorities="${applicationId}.virtual_stub_declared_0"
             android:exported="false"
+            android:process=":p0"
             android:name=".client.stub.StubDeclaredProvider$P0"/>
 
         <provider
             android:authorities="${applicationId}.virtual_stub_declared_1"
             android:exported="false"
+            android:process=":p1"
             android:name=".client.stub.StubDeclaredProvider$P1"/>
 
         <provider
             android:authorities="${applicationId}.virtual_stub_declared_2"
             android:exported="false"
+            android:process=":p2"
             android:name=".client.stub.StubDeclaredProvider$P2"/>
 
         <provider
             android:authorities="${applicationId}.virtual_stub_declared_3"
             android:exported="false"
+            android:process=":p3"
             android:name=".client.stub.StubDeclaredProvider$P3"/>
 
         <provider
             android:authorities="${applicationId}.virtual_stub_declared_4"
             android:exported="false"
+            android:process=":p4"
             android:name=".client.stub.StubDeclaredProvider$P4"/>
 
         <provider
             android:authorities="${applicationId}.virtual_stub_declared_5"
             android:exported="false"
+            android:process=":p5"
             android:name=".client.stub.StubDeclaredProvider$P5"/>
 
         <provider
             android:authorities="${applicationId}.virtual_stub_declared_6"
             android:exported="false"
+            android:process=":p6"
             android:name=".client.stub.StubDeclaredProvider$P6"/>
 
         <provider
             android:authorities="${applicationId}.virtual_stub_declared_7"
             android:exported="false"
+            android:process=":p7"
             android:name=".client.stub.StubDeclaredProvider$P7"/>
 
         <provider
             android:authorities="${applicationId}.virtual_stub_declared_8"
             android:exported="false"
+            android:process=":p8"
             android:name=".client.stub.StubDeclaredProvider$P8"/>
 
         <provider
             android:authorities="${applicationId}.virtual_stub_declared_9"
             android:exported="false"
+            android:process=":p9"
             android:name=".client.stub.StubDeclaredProvider$P9"/>
 
         <provider
             android:authorities="${applicationId}.virtual_stub_declared_10"
             android:exported="false"
+            android:process=":p10"
             android:name=".client.stub.StubDeclaredProvider$P10"/>
 
         <provider
             android:authorities="${applicationId}.virtual_stub_declared_11"
             android:exported="false"
+            android:process=":p11"
             android:name=".client.stub.StubDeclaredProvider$P11"/>
 
         <provider
             android:authorities="${applicationId}.virtual_stub_declared_12"
             android:exported="false"
+            android:process=":p12"
             android:name=".client.stub.StubDeclaredProvider$P12"/>
 
         <provider
             android:authorities="${applicationId}.virtual_stub_declared_13"
             android:exported="false"
+            android:process=":p13"
             android:name=".client.stub.StubDeclaredProvider$P13"/>
 
         <provider
             android:authorities="${applicationId}.virtual_stub_declared_14"
             android:exported="false"
+            android:process=":p14"
             android:name=".client.stub.StubDeclaredProvider$P14"/>
 
     </application>

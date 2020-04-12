@@ -33,9 +33,7 @@ import com.lody.virtual.client.hook.delegate.TaskDescriptionDelegate;
 import com.lody.virtual.client.ipc.ServiceManagerNative;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.ipc.VPackageManager;
-import com.lody.virtual.client.stub.StubContentResolver;
 import com.lody.virtual.client.stub.VASettings;
-import com.lody.virtual.helper.collection.ArrayMap;
 import com.lody.virtual.helper.compat.BundleCompat;
 import com.lody.virtual.helper.ipcbus.IPCBus;
 import com.lody.virtual.helper.ipcbus.IPCSingleton;
@@ -60,8 +58,8 @@ import java.util.Set;
 import dalvik.system.DexFile;
 import mirror.android.app.ActivityThread;
 
-import static com.lody.virtual.client.stub.VASettings.STUB_DECLARED_CP_COUNT;
 import static com.lody.virtual.client.stub.VASettings.getDeclaredCpAuthority;
+import static com.lody.virtual.client.stub.VASettings.getMainDeclaredCpAuthority;
 
 /**
  * @author Lody
@@ -105,7 +103,8 @@ public final class VirtualCore {
     private PhoneInfoDelegate phoneInfoDelegate;
     private ComponentDelegate componentDelegate;
     private TaskDescriptionDelegate taskDescriptionDelegate;
-    private ArrayMap<Uri, StubContentResolver> mDeclaredCpResolver = new ArrayMap<>();
+    private int appPid = -1;
+    private Uri mRegisterAuthForResolver;
 
     private VirtualCore() {
     }
@@ -213,7 +212,6 @@ public final class VirtualCore {
             invocationStubManager.init();
             invocationStubManager.injectAll();
             ContextFixer.fixContext(context);
-            registerDeclaredStubContentObserver();
             isStartUp = true;
             if (initLock != null) {
                 initLock.open();
@@ -276,12 +274,25 @@ public final class VirtualCore {
             processType = ProcessType.Server;
         } else if (VActivityManager.get().isAppProcess(processName)) {
             processType = ProcessType.VAppClient;
+            appPid = parseVPid(processName);
         } else {
             processType = ProcessType.CHILD;
         }
         if (isVAppProcess()) {
             systemPid = VActivityManager.get().getSystemPid();
         }
+    }
+
+    private int parseVPid(String stubProcessName) {
+        String prefix = VirtualCore.get().getHostPkg() + ":p";
+        if (stubProcessName != null && stubProcessName.startsWith(prefix)) {
+            try {
+                return Integer.parseInt(stubProcessName.substring(prefix.length()));
+            } catch (NumberFormatException e) {
+                // ignore
+            }
+        }
+        return -1;
     }
 
     private IAppManager getService() {
@@ -549,66 +560,20 @@ public final class VirtualCore {
                 auth.equals("settings");
     }
 
-    private void registerDeclaredStubContentObserver() {
-        if (isServerProcess())
-            return;
-        int id = 0;
-        while (id < STUB_DECLARED_CP_COUNT) {
-            String resolverAuthority = getDeclaredCpAuthority(id);
-            Uri auth = Uri.parse("content://" + resolverAuthority);
-//            VLog.d(TAG, "register stub content observer " + auth);
-            StubContentResolver stubContentResolver = new StubContentResolver(auth);
-            VirtualCore.get().getContext().getContentResolver().registerContentObserver(auth, true, stubContentResolver);
-            mDeclaredCpResolver.put(auth, stubContentResolver);
-            id++;
-        }
-    }
-
-    public Uri registerContentObserver(Uri uri, boolean notifyForDescendants, Object observer) {
-        StubContentResolver resolver = queryFreeCpResolver();
-        if (resolver != null) {
-//        VLog.d(TAG, "register observer : " + resolver.getRegisterAuth() + ", " + resolver.getResolverAuth());
-            resolver.setResolverData(uri, notifyForDescendants, observer);
-            return resolver.getRegisterAuth();
-        } else {
-            //when registerDeclaredStubContentObserver, no free observer
+    public Uri getRegisterCpAuth() {
+        if (isChildProcess() || isServerProcess())
             return null;
-        }
-    }
 
-    public StubContentResolver getContentObserver(Uri uri) {
-        for (Uri key : mDeclaredCpResolver.keySet()) {
-            StubContentResolver resolver = mDeclaredCpResolver.get(key);
-            if (uri.equals(resolver.getResolverAuth())) {
-//                VLog.d(TAG, "get cache observer : " + resolver.getRegisterAuth() + ", " + resolver.getResolverAuth());
-                return resolver;
+        if (mRegisterAuthForResolver == null) {
+            String resolverAuthority;
+            if (isMainProcess()) {
+                resolverAuthority = getMainDeclaredCpAuthority();
+            } else {
+                resolverAuthority = getDeclaredCpAuthority(appPid);
             }
+            mRegisterAuthForResolver = Uri.parse("content://" + resolverAuthority);
         }
-        return null;
-    }
-
-    public boolean unregisterContentObserver(Object observer) {
-        Iterator<Map.Entry<Uri, StubContentResolver>> iterator = mDeclaredCpResolver.entrySet().iterator();
-        while (iterator.hasNext()) {
-            Map.Entry<Uri, StubContentResolver> next = iterator.next();
-            if (next.getValue().getTransport() == observer) {
-//                VLog.d(TAG, "unregister observer : " + next.getValue().getRegisterAuth() + ", " + next.getValue().getResolverAuth());
-                next.getValue().release();
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private StubContentResolver queryFreeCpResolver() {
-        Iterator<Map.Entry<Uri, StubContentResolver>> iterator = mDeclaredCpResolver.entrySet().iterator();
-        while (iterator.hasNext()) {
-            Map.Entry<Uri, StubContentResolver> next = iterator.next();
-            if (next.getValue().isFree()) {
-                return next.getValue();
-            }
-        }
-        return null;
+        return mRegisterAuthForResolver;
     }
 
     public abstract static class UiCallback extends IUiCallback.Stub {

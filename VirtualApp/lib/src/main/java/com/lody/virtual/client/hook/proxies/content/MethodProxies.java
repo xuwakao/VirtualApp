@@ -1,12 +1,17 @@
 package com.lody.virtual.client.hook.proxies.content;
 
+import android.database.IContentObserver;
 import android.net.Uri;
+import android.os.IBinder;
+import android.os.IInterface;
 
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.hook.base.MethodProxy;
-import com.lody.virtual.client.stub.StubContentResolver;
 
 import java.lang.reflect.Method;
+import java.util.WeakHashMap;
+
+import mirror.android.content.ContentObserver;
 
 class MethodProxies {
     private static final String TAG = "ContentService$MethodProxies";
@@ -37,16 +42,7 @@ class MethodProxies {
 //                VLog.d(TAG, "notifyChange installed providers");
                 return method.invoke(who, args);
             }
-            Object observer = args[1];
-            Object userHandle = args[3];
-            Object targetSdkVersion = args[4];
-//            VLog.d(TAG, "notifyChange [ " + uri + ", " + observer + ", " + userHandle + ", " + targetSdkVersion + " ]");
-            StubContentResolver contentObserver = VirtualCore.get().getContentObserver(uri);
-            if (contentObserver != null) {
-//                VLog.d(TAG, "notify change has cache : " + contentObserver);
-                args[0] = contentObserver.getRegisterAuth();
-                args[1] = contentObserver.getTransport();
-            }
+            args[0] = VirtualCore.get().getRegisterCpAuth();
             return method.invoke(who, args);
         }
     }
@@ -56,6 +52,7 @@ class MethodProxies {
      * IContentObserver observer, int userHandle, int targetSdkVersion)
      */
     static class RegisterContentObserver extends MethodProxy {
+        private WeakHashMap<IBinder, IContentObserver> mProxyIContentObserver = new WeakHashMap<>();
 
         @Override
         public String getMethodName() {
@@ -66,41 +63,78 @@ class MethodProxies {
         public Object call(Object who, Method method, Object... args) throws Throwable {
             Uri uri = (Uri) args[0];
             if (VirtualCore.get().isInstalledProviders(uri.getAuthority())) {
-//                VLog.d(TAG, "registerContentObserver installed providers");
                 return method.invoke(who, args);
             }
-            boolean notifyForDescendants = (boolean) args[1];
             Object observer = args[2];
-            Object userHandle = args[3];
-            Object targetSdkVersion = args[4];
-            Uri changed = VirtualCore.get().registerContentObserver(uri, notifyForDescendants, observer);
-//            VLog.d(TAG, "registerContentObserver [ " + changed + ", " + uri + ", " + observer + ", " + userHandle + ", " + targetSdkVersion + " ]");
-            if (changed != null) {
-                args[0] = changed;
+            if (IContentObserver.class.isInstance(observer) && !IContentObserverProxy.class.isInstance(observer)) {
+                final IInterface old = (IInterface) args[2];
+                final IBinder token = old.asBinder();
+                if (token != null) {
+                    token.linkToDeath(new IBinder.DeathRecipient() {
+                        @Override
+                        public void binderDied() {
+                            token.unlinkToDeath(this, 0);
+                            mProxyIContentObserver.remove(token);
+                        }
+                    }, 0);
+                    IContentObserver proxyIContentObserver = mProxyIContentObserver.get(token);
+                    Uri auth = VirtualCore.get().getRegisterCpAuth();
+                    if (proxyIContentObserver == null) {
+                        proxyIContentObserver = new IContentObserverProxy(old, auth, uri);
+                        mProxyIContentObserver.put(token, proxyIContentObserver);
+                    }
+                    android.database.ContentObserver contentObserver = ContentObserver.Transport.mContentObserver.get(old);
+                    if (contentObserver != null) {
+                        ContentObserver.mTransport.set(contentObserver, proxyIContentObserver);
+                        args[0] = auth;
+                        args[2] = proxyIContentObserver;
+                    }
+
+                }
             }
             return method.invoke(who, args);
         }
-    }
 
-    /**
-     * public void registerContentObserver(Uri uri, boolean notifyForDescendants,
-     * IContentObserver observer, int userHandle, int targetSdkVersion)
-     */
-    static class UnregisterContentObserver extends MethodProxy {
+        private static class IContentObserverProxy extends IContentObserver.Stub {
+            IInterface mOld;
+            Uri declaredUri;
+            Uri uri;
 
-        @Override
-        public String getMethodName() {
-            return "unregisterContentObserver";
-        }
-
-        @Override
-        public Object call(Object who, Method method, Object... args) throws Throwable {
-            Object observer = args[0];
-            boolean remove = VirtualCore.get().unregisterContentObserver(observer);
-            if (remove) {
-//                VLog.d(TAG, "unregisterContentObserver remove");
+            IContentObserverProxy(IInterface old, Uri auth, Uri uri) {
+                this.mOld = old;
+                this.declaredUri = auth;
+                this.uri = uri;
             }
-            return method.invoke(who, args);
+
+            @Override
+            public void onChange(boolean selfUpdate, Uri uri, int userId) {
+                ContentObserver.Transport.onChange.call(mOld, selfUpdate, this.uri, userId);
+            }
+        }
+
+        @Override
+        public boolean isEnable() {
+            return isAppProcess() || isMainProcess();
         }
     }
+
+//    /**
+//     * public void registerContentObserver(Uri uri, boolean notifyForDescendants,
+//     * IContentObserver observer, int userHandle, int targetSdkVersion)
+//     */
+//    static class UnregisterContentObserver extends MethodProxy {
+//
+//        @Override
+//        public String getMethodName() {
+//            return "unregisterContentObserver";
+//        }
+//
+//        @Override
+//        public Object call(Object who, Method method, Object... args) throws Throwable {
+//            if (!!IContentObserver.class.isInstance(args[0])) {
+//                return method.invoke(who, args);
+//            }
+//            return method.invoke(who, args);
+//        }
+//    }
 }
