@@ -15,6 +15,7 @@ import android.content.res.AssetManager;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.ConditionVariable;
 import android.os.IBinder;
@@ -212,6 +213,10 @@ public final class VirtualCore {
             invocationStubManager.init();
             invocationStubManager.injectAll();
             ContextFixer.fixContext(context);
+
+            if(Build.VERSION.SDK_INT >= 28) {
+                ActivityThread.mHiddenApiWarningShown.set(mainThread, true);
+            }
             isStartUp = true;
             if (initLock != null) {
                 initLock.open();
