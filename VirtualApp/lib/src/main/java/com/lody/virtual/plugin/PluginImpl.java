@@ -198,6 +198,11 @@ public class PluginImpl extends IVClient.Stub {
         VirtualCore.get().getComponentDelegate().afterApplicationCreate(mInitialApplication);
     }
 
+    public ClassLoader getClassLoader() {
+        Context context = mInitialApplication.getBaseContext();
+        return context.getClassLoader();
+    }
+
     private Context createPackageContext(String packageName) {
         try {
             Context hostContext = VirtualCore.get().getContext();

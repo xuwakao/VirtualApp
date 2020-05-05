@@ -9,7 +9,6 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 
-import com.lody.virtual.client.VClientImpl;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.interfaces.IInjector;
 import com.lody.virtual.client.ipc.VActivityManager;
@@ -213,7 +212,7 @@ public class PluginHCallbackStub implements Handler.Callback, IInjector {
                             VActivityManager.get().onActivityCreate(ComponentUtils.toComponentName(info),
                                     caller, token, info, intent, ComponentUtils.getTaskAffinity(info),
                                     taskId, info.launchMode, info.flags, pluginId);
-                            ClassLoader appClassLoader = VClientImpl.get().getClassLoader(info.applicationInfo);
+                            ClassLoader appClassLoader = plugin.getClassLoader();
                             intent.setExtrasClassLoader(appClassLoader);
                             Reflect.on(next).set("mIntent", intent);
                             Reflect.on(next).set("mInfo", info);
@@ -258,7 +257,7 @@ public class PluginHCallbackStub implements Handler.Callback, IInjector {
         );
 
         VActivityManager.get().onActivityCreate(ComponentUtils.toComponentName(info), caller, token, info, intent, ComponentUtils.getTaskAffinity(info), taskId, info.launchMode, info.flags, pluginId);
-        ClassLoader appClassLoader = VClientImpl.get().getClassLoader(info.applicationInfo);
+        ClassLoader appClassLoader = plugin.getClassLoader();
         intent.setExtrasClassLoader(appClassLoader);
         ActivityThread.ActivityClientRecord.intent.set(r, intent);
         ActivityThread.ActivityClientRecord.activityInfo.set(r, info);
